@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<!--
+  dead-silicon — writing entry template (copy per post)
+  SAMPLE CONTENT throughout: numbers are blanked on purpose — law 1.
+  EDIT: title (2 places), meta line, body, the reproduce block commands.
+-->
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>gate −1 — three dot products and a number · dead-silicon</title>
+<meta name="description" content="Build log entry from the dead-silicon project.">
+<meta property="og:title" content="gate −1 — three dot products and a number · dead-silicon">
+<meta property="og:description" content="A four-hour, by-hand C++ test: mmap two 100M-float files, dot product three ways, print GB/s.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- SHARE CARD. when you copy this template, change og:url to the new
+     filename — otherwise every post shares as if it were this page.
+     og:url and og:image must stay ABSOLUTE: x, whatsapp and slack fetch from
+     their own servers, so a relative path unfurls as a blank box. -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://deadsilicon.com/post.html">
+<meta property="og:site_name" content="dead-silicon">
+<meta property="og:image" content="https://deadsilicon.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="dead silicon — a stippled orb beside the words 'a from-scratch llm inference engine, built on a gtx 1050 and 16gb of ram.'">
+<meta name="twitter:image" content="https://deadsilicon.com/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23E8E6DF'/%3E%3Ccircle cx='23' cy='12' r='2' fill='%23CF6A2B'/%3E%3Ccircle cx='10' cy='21' r='2' fill='%23E8E6DF'/%3E%3Ccircle cx='20' cy='22' r='1.6' fill='%23E8E6DF'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#E8E6DF">
+<link rel="apple-touch-icon" href="touch-icon.png">
+<script>
+/* theme boot: LIGHT is the default, full stop — the OS preference is deliberately
+   ignored, because cream is the identity and a visitor in os dark mode should still
+   land on the site as it was designed. dark is opt-in via the toggle only.
+   after deploy, uncomment the STORAGE line here and in the toggle handler so a
+   visitor's manual choice sticks site-wide. */
+(function(){var d=false;
+/* STORAGE: try{d=localStorage.getItem("ds-theme")==="dark"}catch(e){} */
+if(d){document.documentElement.setAttribute("data-theme","dark");
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#0B0C0E");}})();
+</script>
+<style>
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono"),local("JetBrainsMono-Regular"),url("fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono ExtraBold"),local("JetBrainsMono-ExtraBold"),url("fonts/JetBrainsMono-ExtraBold.woff2") format("woff2");font-weight:800;font-display:swap}
+:root{--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;--w:66ch}
+:root[data-theme="dark"]{--bg:#0B0C0E;--panel:#101216;--ink:#E8E6DF;--dim:rgba(232,230,223,.66);
+  --mute:rgba(232,230,223,.52);--faint:rgba(232,230,223,.26);
+  --line:rgba(232,230,223,.13);--ember:#CF6A2B}
+:root[data-theme="light"]{--bg:#E8E6DF;--panel:#DFDCD2;--ink:#17181B;--dim:rgba(23,24,27,.72);
+  --mute:rgba(23,24,27,.62);--faint:rgba(23,24,27,.30);
+  --line:rgba(23,24,27,.16);--ember:#964614}
+*{box-sizing:border-box}
+[id]{scroll-margin-top:56px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);
+  font-size:15.5px;line-height:1.8;-webkit-font-smoothing:antialiased;font-feature-settings:"calt" 0}
+::selection{background:var(--ember);color:var(--bg)}
+a{color:var(--ink);text-decoration-color:var(--faint);text-underline-offset:4px}
+a:hover{color:var(--ember);text-decoration-color:var(--ember)}
+:focus-visible{outline:2px solid var(--ember);outline-offset:3px}
+button{font:inherit;color:var(--dim);background:none;border:0;cursor:pointer;padding:6px 8px;margin:-6px -8px}
+button:hover{color:var(--ember)}
+.tick{position:fixed;width:26px;height:26px;pointer-events:none;z-index:60;opacity:.35}
+.tick i{position:absolute;background:var(--ink);display:block}
+.tick .h{width:26px;height:1px}.tick .v{width:1px;height:26px}
+.tick.tl{top:12px;left:12px}.tick.tr{top:12px;right:12px}
+.tick.bl{bottom:12px;left:12px}.tick.br{bottom:12px;right:12px}
+.tick.tr .h,.tick.br .h{right:0}.tick.tr .v,.tick.br .v{right:0}
+.tick.bl .v,.tick.br .v{bottom:0}.tick.bl .h,.tick.br .h{bottom:0}
+header.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
+#prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--ember);
+  transform:scaleX(0);transform-origin:0 50%;pointer-events:none}
+header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;display:flex;
+  align-items:baseline;justify-content:space-between;gap:12px}
+.crumb{font-size:.85rem}
+.crumb a{text-decoration:none}.crumb .sep{color:var(--mute);padding:0 6px}
+.crumb .here{color:var(--dim)}
+.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+#clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+article{max-width:var(--w);margin-inline:auto;padding:56px 20px 30px}
+h1{font-size:clamp(1.4rem,3.4vw,1.9rem);font-weight:800;line-height:1.35;margin:0}
+.meta{color:var(--mute);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 34px}
+.meta b{color:var(--ember);font-weight:800}
+.meta a{color:var(--mute);text-decoration-color:var(--faint)}
+.meta a:hover{color:var(--ember);text-decoration-color:var(--ember)}
+.arw,.arw-l{display:inline-block;transition:transform .14s steps(2,end)}
+a:hover .arw{transform:rotate(45deg)}
+a:hover .arw-l{transform:translateX(-6px)}
+@media (prefers-reduced-motion:reduce){.arw,.arw-l{transition:none}}
+article p{margin:18px 0;color:var(--dim)}
+article p b{color:var(--ink)}
+code{background:var(--panel);padding:2px 6px;font-size:.88em}
+pre{background:var(--panel);border:1px solid var(--line);padding:16px 18px;overflow-x:auto;
+  font-size:.85rem;line-height:1.7;margin:24px 0}
+pre code{background:none;padding:0}
+pre,code{font-feature-settings:"calt" 1}
+.repro{border:1px solid var(--line);position:relative;
+  padding:18px 20px 18px 28px;margin:36px 0}
+canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
+.repro h2{margin:0;font-size:.82rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ember)}
+.repro p{font-size:.88rem;margin:12px 0 0}
+.repro pre{margin:14px 0 0}
+footer{border-top:1px solid var(--line);margin-top:56px}
+footer .wrap{max-width:var(--w);margin-inline:auto;padding:34px 20px;display:grid;
+  grid-template-columns:minmax(0,1fr) 72px;gap:20px;align-items:start}
+.back{text-decoration:none;font-size:.9rem;border-bottom:1px solid var(--faint);padding:10px 2px 6px;display:inline-block}
+.back:hover{border-color:var(--ember)}
+.law{margin-top:16px;font-size:.78rem;color:var(--mute);line-height:2}
+#orb{width:72px;height:72px;justify-self:end}
+@media (max-width:640px){.tick{display:none}
+  footer .wrap{grid-template-columns:1fr}#orb{justify-self:start}}
+</style>
+</head>
+<body>
+
+<div class="tick tl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick tr" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick bl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick br" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+
+<header class="top">
+  <div class="bar">
+    <nav class="crumb" aria-label="breadcrumb">
+      <a href="index.html">d-s.</a><span class="sep">/</span><a href="log.html">log</a><span class="sep">/</span><span class="here">gate&nbsp;−1</span>
+    </nav>
+    <div class="hud">
+      <span id="clock">lagos --:--</span>
+      <button id="theme" type="button" aria-pressed="true">dark</button>
+    </div>
+  </div>
+  <div id="prog" aria-hidden="true"></div>
+</header>
+
+<article>
+  <h1>gate −1 — three dot products and a number</h1>
+  <div class="meta">08.28.26 · <b>pre-ignition</b> · 6 min ·
+    <span title="linked once the timelapse is posted">session —</span><!-- FILL: swap for <a href="X_STATUS_URL" target="_blank" rel="noopener">session <span class="arw">↗</span></a> --></div>
+
+  <!-- OPTIONAL session film. self-hosted; never the x embed script, it is a tracker.
+       Paste this in, uncommented, and copy the .vid rules from log.html:
+
+         figure.vid > video[src=films/dayNNN.mp4  poster=films/dayNNN.jpg
+                            preload=none  controls muted loop playsinline]
+         figcaption: session film - a[href=<x status url>] posted on x
+
+       poster + preload=none are not optional: without them a visitor downloads
+       the whole file before deciding to watch it. and copy height:auto with the
+       .vid css, or the height attribute wins and the video letterboxes.
+       kept as prose because html comments do not nest. -->
+
+  <p>before day one is allowed to exist, the plan demands one artifact: a four-hour,
+    by-hand c++ test. <code>mmap</code> two 100m-float files, take their dot product three
+    ways — scalar, avx2, threaded — and print a bandwidth figure in gb/s.
+    not a program. a <b>number</b>.</p>
+
+  <p>the point of the exercise is the shape of the curve, not the code. scalar shows
+    the floor. vectorizing buys a multiple. threads buy the rest — and then the line
+    goes flat, because on this machine inference is a negotiation with dram,
+    not with the alu.</p>
+
+  <h2>why this one comes before day one</h2>
+
+  <p>everything in year one is priced against how fast i can write correct low-level c++.
+    if that assumption is wrong, every bar downstream is wrong with it, and i&#39;d rather find
+    out in an afternoon than in november. so this gate isn&#39;t really about dot products. it&#39;s
+    a calibration test with a consequence attached, and the consequence is written down
+    <i>before</i> the run:</p>
+
+<pre><code>result                        consequence
+correct, under 4 hours        every q1 bar stands as written
+correct, but over 4 hours     q1 speed bar drops from 1/3 to 1/4 of llama.cpp
+could not finish              three-week c++ ramp goes in front of q1</code></pre>
+
+  <p><b>rules:</b> one sitting, four-hour timebox, docs allowed, no ai-generated code. that
+    last one matters more than the timebox. an llm writes a correct avx2 kernel in ninety
+    seconds, which tells me nothing about whether i can debug one at 2am in january.</p>
+
+  <h2>what this gate is not measuring</h2>
+
+  <p>two 100m-float32 arrays is 800 mb. this laptop has 16gb of ram. after the first pass both
+    files sit in page cache and never touch the ssd again. that&#39;s deliberate —
+    <b>this measures dram, not storage.</b> the disk ceiling is a different number with a
+    different harness, and it&#39;s roughly an order of magnitude lower.</p>
+
+  <p>i&#39;m saying it out loud because <code>mmap</code> in the description makes this look like
+    a storage test, and it isn&#39;t. the two ceilings are far enough apart that confusing them is
+    the fastest way to publish something wrong. what i will do is time the first pass
+    separately — that one <i>does</i> touch the ssd, and it&#39;s a free preview of the number
+    that matters more.</p>
+
+  <h2>what i expect, written before i run it</h2>
+
+  <p>if i only report results, nobody can tell whether i understood the machine or fit a story
+    to it afterward.</p>
+
+  <p><b>scalar</b> — one multiply-add per pair, no vectorization. the floor. cpu-bound,
+    nowhere near the memory ceiling.</p>
+
+  <p><b>avx2</b> — 8 floats per instruction with fma. the big jump lands here. not 8×, because
+    past some point the arithmetic stops being the problem and the loads become the problem.</p>
+
+  <p><b>threaded</b> — this is the one i expect to disappoint, and i want that on record. a dot
+    product reads 8 bytes and does one fma. there is almost no arithmetic per byte moved. so
+    threads should saturate dram at two or three cores and then flatten. if threaded is
+    dramatically faster than avx2, either my avx2 was bad or i&#39;m measuring cache. that
+    flattening is the point of the whole gate — it&#39;s the first time i see the wall i&#39;m going
+    to spend a year arguing with.</p>
+
+  <h2>the trap, which is not performance</h2>
+
+  <p>i went in thinking the hard part was speed. it isn&#39;t. it&#39;s the sum.</p>
+
+  <p>100m products of <code>u(0,1)</code> values average about 0.25 each, so the true dot
+    product is around 2.5e7. a single float32 accumulator holds about 7 decimal digits. once
+    that accumulator passes roughly 4.2e6, the gap between representable neighbours exceeds
+    0.5 — and adding 0.25 to it <b>rounds to nothing at all</b>. the sum stops growing. not
+    drifts. stops.</p>
+
+<pre><code>true dot product (float64 ref)        ≈ 2.5e7
+single float32 accumulator saturates  ≈ 4.2e6   →  ~17% of the true value</code></pre>
+
+  <p>that isn&#39;t a rounding wobble, it&#39;s an 83% error, and it fails the 1e-3 bar by four
+    orders of magnitude. the consequence is the interesting part:
+    <b>more parallelism makes it more accurate.</b> eight avx2 lanes each carry an eighth of
+    the sum, so each one peaks near 3.1e6 — still not safe. unroll four deep for 32
+    accumulators and each holds about 7.8e5, comfortably clear. the vectorized version isn&#39;t
+    just faster than naive scalar, it&#39;s <i>more correct</i>, and the scalar baseline needs a
+    float64 accumulator to be a fair reference at all.</p>
+
+  <p>the whole effect depends on the data. with <code>u(-1,1)</code> the sum is a random walk
+    landing near 3,300 and none of this happens. so the generator distribution is part of the
+    specification, not an implementation detail. mine is <code>u(0,1)</code>, seeded, and the
+    generator ships in the repo. <i>disclosure: this trap was pointed out to me before the
+    run rather than discovered during it. the timebox still tests intrinsics, threading,
+    mmap and debugging under pressure — but i didn&#39;t find this one myself.</i></p>
+
+  <h2>the numbers</h2>
+
+<pre><code>method                        time        bandwidth
+scalar (f64 accumulator)      ____ ms     ____ gb/s
+avx2                          ____ ms     ____ gb/s
+threaded avx2                 ____ ms     ____ gb/s
+
+first pass, cold (touches ssd)            ____ gb/s
+dram, measured   (sysbench, 1m block)     ____ gb/s
+dram, theoretical (dual-channel ddr4)     ____ gb/s
+
+correctness   all three within 1e-3 rel. of the f64 reference: ____
+time taken    ____ / 4h</code></pre>
+
+  <p>three gaps, three lessons. <code>scalar → avx2</code> is what vectorizing is worth.
+    <code>threaded → dram measured</code> is how much of the ceiling i actually reached.
+    <code>dram measured → theoretical</code> is the difference between what the spec sheet
+    promises and what the silicon delivers. and the cold row, sitting far below all of them,
+    is the year.</p>
+
+  <h2>what i got wrong</h2>
+
+  <p>____ <i>(filled in after the run. if nothing surprised me i&#39;ll say that too — but
+    something usually does, and this section is the reason anyone reads a log instead of a
+    spec sheet.)</i></p>
+
+  <div class="repro">
+    <canvas class="rule" aria-hidden="true"></canvas>
+    <h2>reproduce this</h2>
+    <p>one clone, one make, one run. thirty minutes on any x86-64 linux box with avx2.
+      if your numbers disagree with mine, email me — law 1 says mine don&#39;t exist yet.</p>
+<pre><code>git clone https://github.com/elijahadeb/dead-silicon-bench
+cd dead-silicon-bench &amp;&amp; make gate-minus-1
+./gate-minus-1 --generate --seed 0
+./gate-minus-1 a.f32 b.f32</code></pre>
+    <p>your bandwidth will differ from mine. the shape should not: scalar low, avx2 high,
+      threaded flat. if your threaded row keeps climbing past three cores, tell me — that
+      means i&#39;m wrong about where the wall is, and i&#39;d like to know.</p>
+    <p>machine ____ · gcc ____ · <code>-O2 -march=native -pthread</code> · commit ____</p>
+  </div>
+
+</article>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="back" href="log.html"><span class="arw-l">←</span> back to the log</a>
+      <div class="law">law 1 — a claim a stranger can't reproduce in 30 minutes doesn't exist.</div>
+    </div>
+    <canvas id="orb" aria-hidden="true"></canvas>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var doc=document, root=doc.documentElement;
+function q(s){return doc.querySelector(s)}
+function cvar(n){return getComputedStyle(root).getPropertyValue(n).trim()}
+function mulberry32(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;
+  var r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;
+  return ((r^(r>>>14))>>>0)/4294967296}}
+
+function qa(s){return Array.prototype.slice.call(doc.querySelectorAll(s))}
+function drawRules(){
+  var ink=cvar("--ink"),ember=cvar("--ember");
+  qa("canvas.rule").forEach(function(cv,ci){
+    var hostH=cv.parentElement.offsetHeight;
+    var dpr=Math.min(2,window.devicePixelRatio||1);
+    cv.width=10*dpr;cv.height=hostH*dpr;
+    var c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);
+    var rnd=mulberry32(29+ci), y=3;
+    while(y<hostH-2){
+      var r=0.8+rnd()*1.25, x=4+(rnd()*2-1)*2.3;
+      c.fillStyle=rnd()<0.12?ink:ember;
+      c.beginPath();c.arc(x,y,r,0,6.283);c.fill();
+      y+=4+rnd()*3.6;
+    }
+  });
+}
+var rsz=null;
+window.addEventListener("resize",function(){clearTimeout(rsz);rsz=setTimeout(drawRules,180)});
+
+var themeBtn=q("#theme");
+if(root.getAttribute("data-theme")==="dark"){
+  themeBtn.textContent="light";themeBtn.setAttribute("aria-pressed","false");
+}
+themeBtn.addEventListener("click",function(){
+  var light=root.getAttribute("data-theme")!=="light";
+  root.setAttribute("data-theme",light?"light":"dark");
+  themeBtn.textContent=light?"dark":"light";
+  themeBtn.setAttribute("aria-pressed",light?"true":"false");
+  q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
+  /* STORAGE (uncomment after deploy): try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){} */
+  drawOrb();drawRules();
+});
+
+var clock=q("#clock");
+var fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",hour12:false});
+function tickClock(){clock.textContent="lagos "+fmt.format(new Date())}
+tickClock();setInterval(tickClock,30000);
+
+function drawOrb(){
+  var el=q("#orb");if(!el)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1),S=72;
+  el.width=S*dpr;el.height=S*dpr;
+  var c=el.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,S,S);
+  var ink=cvar("--ink"),ember=cvar("--ember"),k=S/62,rnd=mulberry32(7);
+  var pts=[[0,0,2.2]],rings=[[8,6],[14,10],[20,14],[25,16]];
+  rings.forEach(function(rc){
+    var R=rc[0],cnt=rc[1];
+    for(var j=0;j<cnt;j++){
+      var a=6.28318*j/cnt+R*0.35,dx=R*Math.cos(a),dy=R*Math.sin(a);
+      var shade=Math.max(0,(dx+dy)/(1.414*R));
+      pts.push([dx,dy,0.9+1.4*shade+(rnd()*0.3-0.15)]);
+    }
+  });
+  pts.forEach(function(p,i){
+    c.fillStyle=(i%9===4)?ember:ink;
+    c.beginPath();c.arc(S/2+p[0]*k,S/2+p[1]*k,Math.max(1.1,p[2]*k),0,6.283);c.fill();
+  });
+}
+var prog=q("#prog"), pTick=false;
+function setProg(){
+  var d=doc.documentElement, h=d.scrollHeight-window.innerHeight;
+  var v=h>0?Math.min(1,Math.max(0,(window.scrollY||d.scrollTop||0)/h)):0;
+  prog.style.transform="scaleX("+v+")";pTick=false;
+}
+window.addEventListener("scroll",function(){if(!pTick){pTick=true;requestAnimationFrame(setProg)}},{passive:true});
+setProg();
+
+function init(){drawOrb();drawRules()}
+init();
+if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(init).catch(function(){})}
+})();
+</script>
+</body>
+</html>

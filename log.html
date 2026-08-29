@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<!-- dead-silicon — the build log: execution telemetry ONLY.
+     two species and nothing else:
+       GATES  — pass/fail checkpoints. one heavy plate each, shipped with the
+                command that made them. status: [pass] [fail] [next]
+       HASHES — the daily pulse. one muted line per session, appended to the
+                HASHES data block below right after the tweet goes out (20s ritual).
+     essays & notes live in writings.html — never here.
+     LIVING ARTIFACT: self-hosted <video>, never the x embed script (it is a
+     tracker and would kill the footer's 0-trackers line). drop day001.mp4 next
+     to this file; the x link is a caption OUT-link. -->
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>the build log · dead-silicon</title>
+<meta name="description" content="Execution telemetry for a 365-day build: gates and hashes.">
+<meta property="og:title" content="the build log · dead-silicon">
+<meta property="og:description" content="Gates and hashes — pass/fail checkpoints and the daily pulse of a 365-day build.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- SHARE CARD. og:url and og:image must stay ABSOLUTE — x, whatsapp and slack
+     fetch from their own servers, so a relative path unfurls as a blank box.
+     og.png is drawn by banner.py: same seeded orb as the footer, 12x scale. -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://deadsilicon.com/log.html">
+<meta property="og:site_name" content="dead-silicon">
+<meta property="og:image" content="https://deadsilicon.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="dead silicon — a stippled orb beside the words 'a from-scratch llm inference engine, built on a gtx 1050 and 16gb of ram.'">
+<meta name="twitter:image" content="https://deadsilicon.com/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23E8E6DF'/%3E%3Ccircle cx='23' cy='12' r='2' fill='%23CF6A2B'/%3E%3Ccircle cx='10' cy='21' r='2' fill='%23E8E6DF'/%3E%3Ccircle cx='20' cy='22' r='1.6' fill='%23E8E6DF'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#E8E6DF">
+<link rel="apple-touch-icon" href="touch-icon.png">
+<script>
+/* theme boot: LIGHT is the default, full stop — the OS preference is deliberately
+   ignored, because cream is the identity and a visitor in os dark mode should still
+   land on the site as it was designed. dark is opt-in via the toggle only.
+   after deploy, uncomment the STORAGE line here and in the toggle handler so a
+   visitor's manual choice sticks site-wide. */
+(function(){var d=false;
+/* STORAGE: try{d=localStorage.getItem("ds-theme")==="dark"}catch(e){} */
+if(d){document.documentElement.setAttribute("data-theme","dark");
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#0B0C0E");}})();
+</script>
+<style>
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono"),local("JetBrainsMono-Regular"),url("fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono Medium"),local("JetBrainsMono-Medium"),url("fonts/JetBrainsMono-Medium.woff2") format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono ExtraBold"),local("JetBrainsMono-ExtraBold"),url("fonts/JetBrainsMono-ExtraBold.woff2") format("woff2");font-weight:800;font-display:swap}
+:root{--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;--w:72ch}
+:root[data-theme="dark"]{--bg:#0B0C0E;--ink:#E8E6DF;--dim:rgba(232,230,223,.66);
+  --mute:rgba(232,230,223,.52);--faint:rgba(232,230,223,.26);
+  --line:rgba(232,230,223,.13);--ember:#CF6A2B}
+:root[data-theme="light"]{--bg:#E8E6DF;--ink:#17181B;--dim:rgba(23,24,27,.72);
+  --mute:rgba(23,24,27,.62);--faint:rgba(23,24,27,.30);
+  --line:rgba(23,24,27,.16);--ember:#964614}
+*{box-sizing:border-box}
+[id]{scroll-margin-top:56px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);
+  font-size:15.5px;line-height:1.75;-webkit-font-smoothing:antialiased;font-feature-settings:"calt" 0}
+::selection{background:var(--ember);color:var(--bg)}
+a{color:var(--ink);text-decoration-color:var(--faint);text-underline-offset:4px}
+a:hover{color:var(--ember);text-decoration-color:var(--ember)}
+:focus-visible{outline:2px solid var(--ember);outline-offset:3px}
+button{font:inherit;color:var(--dim);background:none;border:0;cursor:pointer;padding:6px 8px;margin:-6px -8px}
+button:hover{color:var(--ember)}
+.tick{position:fixed;width:26px;height:26px;pointer-events:none;z-index:60;opacity:.35}
+.tick i{position:absolute;background:var(--ink);display:block}
+.tick .h{width:26px;height:1px}.tick .v{width:1px;height:26px}
+.tick.tl{top:12px;left:12px}.tick.tr{top:12px;right:12px}
+.tick.bl{bottom:12px;left:12px}.tick.br{bottom:12px;right:12px}
+.tick.tr .h,.tick.br .h{right:0}.tick.tr .v,.tick.br .v{right:0}
+.tick.bl .v,.tick.br .v{bottom:0}.tick.bl .h,.tick.br .h{bottom:0}
+header.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
+header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;display:flex;
+  align-items:baseline;justify-content:space-between;gap:12px}
+.crumb{font-size:.85rem}
+.crumb a{text-decoration:none}.crumb .sep{color:var(--mute);padding:0 6px}
+.crumb .here{color:var(--dim)}
+.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+#clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+main{max-width:var(--w);margin-inline:auto;padding:56px 20px 30px}
+h1{margin:0;font-weight:800;letter-spacing:.01em;font-size:clamp(1.3rem,3vw,1.7rem)}
+h2{margin:46px 0 0;font-size:1rem;font-weight:800;letter-spacing:.01em}
+.sub{margin:14px 0 0;color:var(--dim);font-size:.9rem}
+.sub b{color:var(--ink);font-weight:800}
+/* gates — high weight, one plate each */
+.gate{display:block;border:1px solid var(--line);padding:16px 18px;margin-top:14px;
+  text-decoration:none;color:var(--ink)}
+.gate .gt{font-weight:800;font-size:1.02rem}
+.gate .gm{margin-top:6px;font-size:.75rem;color:var(--mute);letter-spacing:.1em;
+  text-transform:uppercase;font-variant-numeric:tabular-nums}
+.gate .gm b{color:var(--ember);font-weight:800}
+.gate .ga{margin-top:10px;font-size:.8rem;color:var(--dim);
+  border-top:1px dashed var(--line);padding-top:10px;overflow-x:auto;white-space:pre}
+.gate:hover .gt{color:var(--ember)}
+.gate.wip{cursor:default}
+.gate.wip .gt{color:var(--dim)}
+.gate.wip .ga{opacity:.6}
+.gate.wip:hover .gt{color:var(--dim)}
+/* cycling verbs, typed then deleted — css only, no javascript.
+   each word is an <i> with overflow:hidden and an animated width. the face is
+   monospace, so width in ch is exactly the character count and steps(n) reveals
+   one glyph per step.
+
+   the caret is the right border: it rides the text edge for free, because it sits
+   on the element whose width is animating. the catch is that css INTERPOLATES
+   border-color across the gap between keyframes, so a dormant word will fade its
+   caret up at left:0 while another word is mid-type — two cursors on screen. every
+   colour change below is therefore bracketed by a stop 0.01% earlier, which makes
+   it snap. reduced-motion pins word one, fully typed, caret still. */
+.verb{display:inline-block;position:relative;height:1.35em;vertical-align:baseline;
+  color:var(--ember);text-align:left;font-size:.78rem;
+  /* ch measures the glyph, not the gap. any inherited letter-spacing makes every
+     width below too small and the longest word clips mid-type. keep this at 0. */
+  letter-spacing:0}
+.verb i{position:absolute;left:0;top:0;font-style:normal;white-space:nowrap;
+  overflow:hidden;width:0;border-right:1px solid transparent;opacity:.85}
+.verb.g{width:10ch}
+.verb.g i:nth-child(1){animation:g1 13.0s steps(9,end) infinite}
+@keyframes g1{0.00%{width:0;border-color:var(--ember)}6.00%,14.60%{width:9ch;border-color:var(--ember)}19.00%{width:0;border-color:var(--ember)}19.01%,100%{width:0;border-color:transparent}}
+.verb.g i:nth-child(2){animation:g2 13.0s steps(6,end) infinite}
+@keyframes g2{0%,19.99%{width:0;border-color:transparent}20.00%{width:0;border-color:var(--ember)}26.00%,34.60%{width:6ch;border-color:var(--ember)}39.00%{width:0;border-color:var(--ember)}39.01%,100%{width:0;border-color:transparent}}
+.verb.g i:nth-child(3){animation:g3 13.0s steps(10,end) infinite}
+@keyframes g3{0%,39.99%{width:0;border-color:transparent}40.00%{width:0;border-color:var(--ember)}46.00%,54.60%{width:10ch;border-color:var(--ember)}59.00%{width:0;border-color:var(--ember)}59.01%,100%{width:0;border-color:transparent}}
+.verb.g i:nth-child(4){animation:g4 13.0s steps(9,end) infinite}
+@keyframes g4{0%,59.99%{width:0;border-color:transparent}60.00%{width:0;border-color:var(--ember)}66.00%,74.60%{width:9ch;border-color:var(--ember)}79.00%{width:0;border-color:var(--ember)}79.01%,100%{width:0;border-color:transparent}}
+.verb.g i:nth-child(5){animation:g5 13.0s steps(10,end) infinite}
+@keyframes g5{0%,79.99%{width:0;border-color:transparent}80.00%{width:0;border-color:var(--ember)}86.00%,94.60%{width:10ch;border-color:var(--ember)}99.00%{width:0;border-color:var(--ember)}99.01%,100%{width:0;border-color:transparent}}
+.verb.n{width:9ch}
+.verb.n i:nth-child(1){animation:n1 13.0s steps(8,end) infinite}
+@keyframes n1{0.00%{width:0;border-color:var(--ember)}6.00%,14.60%{width:8ch;border-color:var(--ember)}19.00%{width:0;border-color:var(--ember)}19.01%,100%{width:0;border-color:transparent}}
+.verb.n i:nth-child(2){animation:n2 13.0s steps(8,end) infinite}
+@keyframes n2{0%,19.99%{width:0;border-color:transparent}20.00%{width:0;border-color:var(--ember)}26.00%,34.60%{width:8ch;border-color:var(--ember)}39.00%{width:0;border-color:var(--ember)}39.01%,100%{width:0;border-color:transparent}}
+.verb.n i:nth-child(3){animation:n3 13.0s steps(9,end) infinite}
+@keyframes n3{0%,39.99%{width:0;border-color:transparent}40.00%{width:0;border-color:var(--ember)}46.00%,54.60%{width:9ch;border-color:var(--ember)}59.00%{width:0;border-color:var(--ember)}59.01%,100%{width:0;border-color:transparent}}
+.verb.n i:nth-child(4){animation:n4 13.0s steps(7,end) infinite}
+@keyframes n4{0%,59.99%{width:0;border-color:transparent}60.00%{width:0;border-color:var(--ember)}66.00%,74.60%{width:7ch;border-color:var(--ember)}79.00%{width:0;border-color:var(--ember)}79.01%,100%{width:0;border-color:transparent}}
+.verb.n i:nth-child(5){animation:n5 13.0s steps(7,end) infinite}
+@keyframes n5{0%,79.99%{width:0;border-color:transparent}80.00%{width:0;border-color:var(--ember)}86.00%,94.60%{width:7ch;border-color:var(--ember)}99.00%{width:0;border-color:var(--ember)}99.01%,100%{width:0;border-color:transparent}}
+@media (prefers-reduced-motion:reduce){
+  .verb i{animation:none!important;width:0;border-color:transparent}
+  .verb i:first-child{width:auto;border-color:var(--ember)}}
+
+.gate:hover{border-color:var(--faint)}
+/* living artifact — self-hosted, no third-party script */
+.vid{border:1px solid var(--line);margin:18px 0 0;padding:0}
+.vid video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#000}
+/* height:auto is load-bearing — the tag carries width/height attributes to reserve
+   layout space, and without this the attribute height wins and letterboxes. */
+.vid figcaption{padding:10px 14px;font-size:.72rem;color:var(--mute)}
+.vid figcaption::before{content:"# ";color:var(--faint)}
+.vid figcaption a{color:var(--mute)}
+.vid figcaption a:hover{color:var(--ember)}
+/* hashes — the daily pulse, deliberately muted */
+.hashes{margin-top:18px;border-bottom:1px dashed var(--line)}
+.hash{border-top:1px dashed var(--line);padding:10px 0;font-size:.85rem;color:var(--mute)}
+.hash .hd{color:var(--faint);font-variant-numeric:tabular-nums;white-space:pre}
+.hash a{color:var(--mute);text-decoration-color:var(--faint)}
+.hash a:hover{color:var(--ember)}
+.hash .hn{margin:6px 0 0;font-size:.82rem;color:var(--mute);max-width:60ch}
+.hmonth{border-top:1px dashed var(--line);padding:12px 0 2px;font-size:.7rem;
+  color:var(--faint);letter-spacing:.18em;text-transform:uppercase}
+.hmore{display:block;width:100%;text-align:left;border-top:1px dashed var(--line);
+  padding:12px 0;margin:0;font-size:.85rem;color:var(--dim)}
+.hmore:hover{color:var(--ember)}
+.arw,.arw-r,.arw-l{display:inline-block;transition:transform .14s steps(2,end)}
+a:hover .arw{transform:rotate(45deg)}
+a:hover .arw-r{transform:translateX(6px)}
+a:hover .arw-l{transform:translateX(-6px)}
+@media (prefers-reduced-motion:reduce){.arw,.arw-r,.arw-l{transition:none}}
+footer{border-top:1px solid var(--line);margin-top:56px}
+footer .wrap{max-width:var(--w);margin-inline:auto;padding:34px 20px;display:grid;
+  grid-template-columns:minmax(0,1fr) 72px;gap:20px;align-items:start}
+.back{text-decoration:none;font-size:.9rem;border-bottom:1px solid var(--faint);padding:10px 2px 6px;display:inline-block}
+.back:hover{border-color:var(--ember)}
+.law{margin-top:16px;font-size:.78rem;color:var(--mute);line-height:2}
+#orb{width:72px;height:72px;justify-self:end}
+@media (max-width:640px){.tick{display:none}
+  footer .wrap{grid-template-columns:1fr}#orb{justify-self:start}}
+</style>
+</head>
+<body>
+
+<div class="tick tl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick tr" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick bl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick br" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+
+<header class="top">
+  <div class="bar">
+    <nav class="crumb" aria-label="breadcrumb">
+      <a href="index.html">d-s.</a><span class="sep">/</span><span class="here">log</span>
+    </nav>
+    <div class="hud">
+      <span id="clock">lagos --:--</span>
+      <button id="theme" type="button" aria-pressed="true">dark</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <h1>the build log</h1>
+  <p class="sub">execution telemetry for year one — two kinds of entries and nothing else.
+    <b>gates</b> are pass/fail checkpoints: heavy, one entry each, shipped with the
+    command that made them. <b>hashes</b> are the daily pulse: one muted line per
+    session, straight from the commit. essays and notes live in
+    <a href="writings.html">writings</a>.</p>
+
+  <h2 id="gates">gates</h2>
+  <div class="gates">
+    <!-- one plate per gate, newest first. status: [pass] [fail] [next].
+
+         PENDING vs PUBLISHED — a plate with no page yet is a <div>, never an <a>,
+         so it cannot be a dead click. every plate below is pending. to publish one:
+
+           1. <div class="gate wip">        ->  <a class="gate" href="THE-PAGE.html">
+           2. matching </div>               ->  </a>
+           3. in .gm, <span class="verb">…</span>  ->  the date, e.g. 08.29.26
+           4. in .gm, <b>[next]</b>         ->  <b>[pass]</b> or <b>[fail]</b>
+
+         the .ga line (the command) does not change — it is the command either way. -->
+    <!-- gate -1: the page (gate-minus-1.html) is written and sitting in this folder,
+         but nothing links to it until the run happens and the blanks are filled.
+         TO PUBLISH:
+           FROM  <div class="gate wip">
+           TO    <a class="gate" href="gate-minus-1.html">
+         close with </a> instead of </div>, and in .gm replace the whole
+         <span class="verb">…</span> with the date, and [next] with [pass] or [fail]. -->
+    <div class="gate wip">
+      <div class="gt">gate −1: three dot products and a number</div>
+      <div class="gm"><span class="verb g" role="img" aria-label="in progress"><i>measuring</i><i>timing</i><i>re-running</i><i>verifying</i><i>writing up</i></span></div>
+      <div class="ga">$ make gate-minus-1 &amp;&amp; ./gate-minus-1 a.f32 b.f32</div>
+    </div>
+  </div>
+
+  <h2 id="hashes-h">hashes</h2>
+  <!-- ═══ THE FEATURED FILM ═══════════════════════════════════════════════
+       One film on the site at a time — the newest. Every other day's timelapse
+       lives on X and is reached from that day's hash line. This is invariant 3.
+
+       HOSTING. 365 films at ~2.5 MB is ~0.9 GB, and GitHub Pages hard-caps a
+       published site at 1 GB. Worse, git keeps every blob forever, so deleting
+       last month's film reclaims nothing — you cross the ceiling around month 13
+       and cannot walk it back without rewriting history. So:
+
+         films/       for the first ~100 days, in-repo, zero setup
+         R2           after that — Cloudflare R2 is 10 GB free with ZERO egress
+                      fees, custom domain, no tracker. Move by changing the src
+                      base below to https://films.yourdomain.com/dayNNN.mp4 and
+                      nothing else on this page changes.
+
+       NOT youtube. The iframe sets cookies and loads ~1 MB of Google JS, which
+       kills the 0-trackers line in the footer. The whole site is 10 kb.
+
+       BANDWIDTH is a non-issue: poster + preload="none" means a visitor downloads
+       ZERO video bytes until they press play. 1000 plays/month is 2.4 GB against
+       a 100 GB limit. Never remove preload="none" — on a Lagos connection an
+       autoloading 2.5 MB video is the whole page budget spent before first paint.
+
+       MAKING ONE (both lines, every day):
+         ffmpeg -i raw.mov -vf scale=1280:-2 -c:v libx264 -crf 28 -preset slow \
+                -an -movflags +faststart films/dayNNN.mp4
+         ffmpeg -i films/dayNNN.mp4 -ss 3 -vframes 1 -q:v 4 films/dayNNN.jpg
+       The poster is ~40 kb and always stays in the repo — it is what the visitor
+       actually sees, so it must never 404.
+
+       SWAPPING IT: change the three NNNs and the caption date, put the X status
+       url in the caption href AND in that day's HASHES entry below. Two minutes.
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <figure class="vid">
+    <video src="films/day001.mp4" poster="films/day001.jpg" preload="none"
+           controls muted loop playsinline width="1280" height="720"></video>
+    <figcaption>day 001 ·
+      <a href="X_STATUS_URL" target="_blank" rel="noopener">posted on x <span class="arw">↗</span></a>
+    </figcaption>
+  </figure>
+  <div class="hashes" id="hashes"></div>
+  <noscript><p class="sub">hashes render with javascript; the daily archive lives on x.</p></noscript>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="back" href="index.html"><span class="arw-l">←</span> home</a>
+      <div class="law">law 1: a claim a stranger can't reproduce in 30 minutes doesn't exist.</div>
+    </div>
+    <canvas id="orb" aria-hidden="true"></canvas>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var doc=document, root=doc.documentElement;
+function q(s){return doc.querySelector(s)}
+function cvar(n){return getComputedStyle(root).getPropertyValue(n).trim()}
+function mulberry32(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;
+  var r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;
+  return ((r^(r>>>14))>>>0)/4294967296}}
+
+/* HASHES — the daily pulse. append one line right after the tweet goes out.
+   fields: d (day number) · date · msg (the commit line) ·
+           x (the x status url, or null until posted) ·
+           note (optional ~300-word breakdown, or null) */
+var HASHES=[
+  /* ONE LINE PER DAY, oldest first — append to the bottom, the feed reverses it.
+       d     day number, 1..365
+       date  mm.dd.yy
+       msg   what happened, one line, lowercase, no full stop
+       x     link to that day's post on x, or null
+       note  an extra sentence under the line, or null — use it sparingly
+     day 001 is seeded below. copy the shape. */
+  {d:1, date:"08.29.26",
+   msg:"gate -1: mmap, three dot products, first number on the board",
+   x:null,
+   note:null},
+];
+/* the feed self-manages: latest 14 lines by default, then one expander that
+   shows the whole year grouped by month. 365 entries stay one data block. */
+var RECENT=14, showAll=false;
+var MONTHS=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function hashRow(h){
+  var div=doc.createElement("div");div.className="hash";
+  var hd=doc.createElement("span");hd.className="hd";
+  hd.textContent="d"+("00"+h.d).slice(-3)+" · "+h.date+" · ";
+  div.appendChild(hd);
+  div.appendChild(doc.createTextNode(h.msg));
+  if(h.x){
+    div.appendChild(doc.createTextNode(" · "));
+    var a=doc.createElement("a");a.href=h.x;a.target="_blank";a.rel="noopener";
+    a.textContent="session ↗";div.appendChild(a);
+  }
+  if(h.note){
+    var p=doc.createElement("p");p.className="hn";p.textContent=h.note;
+    div.appendChild(p);
+  }
+  return div;
+}
+function buildHashes(){
+  var box=q("#hashes");if(!box)return;box.innerHTML="";
+  if(!HASHES.length){
+    var p=doc.createElement("p");p.className="sub";
+    p.textContent="no sessions yet — ignition 08.29.26.";
+    box.appendChild(p);return;
+  }
+  var list=HASHES.slice().reverse();
+  var shown=showAll?list:list.slice(0,RECENT), lastKey=null;
+  shown.forEach(function(h){
+    if(showAll){
+      var mm=parseInt(h.date.slice(0,2),10), yy=h.date.slice(6);
+      var key=mm+"."+yy;
+      if(key!==lastKey){lastKey=key;
+        var m=doc.createElement("div");m.className="hmonth";
+        m.textContent=MONTHS[mm-1]+" 20"+yy;box.appendChild(m);}
+    }
+    box.appendChild(hashRow(h));
+  });
+  if(!showAll&&list.length>RECENT){
+    var btn=doc.createElement("button");btn.className="hmore";btn.type="button";
+    btn.textContent="show all "+list.length+" hashes ↓";
+    btn.addEventListener("click",function(){showAll=true;buildHashes()});
+    box.appendChild(btn);
+  }
+}
+buildHashes();
+
+/* living artifact: if day001.mp4 is not next to this file yet, hide the panel
+   instead of showing a broken player */
+var laVid=q(".vid video");
+if(laVid){laVid.addEventListener("error",function(){
+  var f=q(".vid");if(f)f.style.display="none";
+});}
+
+var themeBtn=q("#theme");
+if(root.getAttribute("data-theme")==="dark"){
+  themeBtn.textContent="light";themeBtn.setAttribute("aria-pressed","false");
+}
+themeBtn.addEventListener("click",function(){
+  var light=root.getAttribute("data-theme")!=="light";
+  root.setAttribute("data-theme",light?"light":"dark");
+  themeBtn.textContent=light?"dark":"light";
+  themeBtn.setAttribute("aria-pressed",light?"true":"false");
+  q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
+  /* STORAGE (uncomment after deploy): try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){} */
+  drawOrb();
+});
+var clock=q("#clock");
+var fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",hour12:false});
+function tickClock(){clock.textContent="lagos "+fmt.format(new Date())}
+tickClock();setInterval(tickClock,30000);
+function drawOrb(){
+  var el=q("#orb");if(!el)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1),S=72;
+  el.width=S*dpr;el.height=S*dpr;
+  var c=el.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,S,S);
+  var ink=cvar("--ink"),ember=cvar("--ember"),k=S/62,rnd=mulberry32(7);
+  var pts=[[0,0,2.2]],rings=[[8,6],[14,10],[20,14],[25,16]];
+  rings.forEach(function(rc){var R=rc[0],cnt=rc[1];
+    for(var j=0;j<cnt;j++){
+      var a=6.28318*j/cnt+R*0.35,dx=R*Math.cos(a),dy=R*Math.sin(a);
+      var shade=Math.max(0,(dx+dy)/(1.414*R));
+      pts.push([dx,dy,0.9+1.4*shade+(rnd()*0.3-0.15)]);
+    }});
+  pts.forEach(function(p,i){
+    c.fillStyle=(i%9===4)?ember:ink;
+    c.beginPath();c.arc(S/2+p[0]*k,S/2+p[1]*k,Math.max(1.1,p[2]*k),0,6.283);c.fill();
+  });
+}
+drawOrb();
+if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(drawOrb).catch(function(){})}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<!--
+  dead-silicon — the garden: an internal knowledge base, kept in public.
+  concept graph is a HAND-ROLLED force simulation (~120 lines, seeded) — no d3,
+  no react-force-graph. invariant: 0 frameworks. the physics lives below.
+
+  PLANT RITUAL (the day a note gets written):
+    1. copy garden-note.html -> garden-<id>.html and write it
+    2. in NODES below: set status:"growing", planted:"MM.DD.YY", page:"garden-<id>.html"
+    3. push. the graph, the drawer, and the list rebuild themselves from NODES.
+  TEND RITUAL: edit the note, bump tended:"MM.DD.YY".
+    promote status to "evergreen" when it stops changing.
+  EDGES: add ["a","b"] to LINKS only when you can defend the relationship
+    in one sentence. an edge is a claim.
+-->
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>the garden · dead-silicon</title>
+<meta name="description" content="A second brain kept in public: distilled notes from papers, manuals, and the machine — mapped by concept, corrected in place.">
+<meta property="og:title" content="the garden · dead-silicon">
+<meta property="og:description" content="A second brain kept in public — a concept graph of what the engine forces me to learn.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- SHARE CARD. og:url and og:image must stay ABSOLUTE — x, whatsapp and slack
+     fetch from their own servers, so a relative path unfurls as a blank box.
+     og.png is drawn by banner.py: same seeded orb as the footer, 12x scale. -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://deadsilicon.com/garden.html">
+<meta property="og:site_name" content="dead-silicon">
+<meta property="og:image" content="https://deadsilicon.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="dead silicon — a stippled orb beside the words 'a from-scratch llm inference engine, built on a gtx 1050 and 16gb of ram.'">
+<meta name="twitter:image" content="https://deadsilicon.com/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23E8E6DF'/%3E%3Ccircle cx='23' cy='12' r='2' fill='%23CF6A2B'/%3E%3Ccircle cx='10' cy='21' r='2' fill='%23E8E6DF'/%3E%3Ccircle cx='20' cy='22' r='1.6' fill='%23E8E6DF'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#E8E6DF">
+<link rel="apple-touch-icon" href="touch-icon.png">
+<script>
+/* theme boot: LIGHT is the default, full stop — the OS preference is deliberately
+   ignored, because cream is the identity and a visitor in os dark mode should still
+   land on the site as it was designed. dark is opt-in via the toggle only.
+   after deploy, uncomment the STORAGE line here and in the toggle handler so a
+   visitor's manual choice sticks site-wide. */
+(function(){var d=false;
+/* STORAGE: try{d=localStorage.getItem("ds-theme")==="dark"}catch(e){} */
+if(d){document.documentElement.setAttribute("data-theme","dark");
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#0B0C0E");}})();
+</script>
+<style>
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono"),local("JetBrainsMono-Regular"),url("fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono Medium"),local("JetBrainsMono-Medium"),url("fonts/JetBrainsMono-Medium.woff2") format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono ExtraBold"),local("JetBrainsMono-ExtraBold"),url("fonts/JetBrainsMono-ExtraBold.woff2") format("woff2");font-weight:800;font-display:swap}
+:root{--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;--w:72ch}
+:root[data-theme="dark"]{--bg:#0B0C0E;--ink:#E8E6DF;--dim:rgba(232,230,223,.66);
+  --mute:rgba(232,230,223,.52);--faint:rgba(232,230,223,.26);
+  --line:rgba(232,230,223,.13);--ember:#CF6A2B}
+:root[data-theme="light"]{--bg:#E8E6DF;--ink:#17181B;--dim:rgba(23,24,27,.72);
+  --mute:rgba(23,24,27,.62);--faint:rgba(23,24,27,.30);
+  --line:rgba(23,24,27,.16);--ember:#964614}
+*{box-sizing:border-box}
+[id]{scroll-margin-top:56px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);
+  font-size:15.5px;line-height:1.75;-webkit-font-smoothing:antialiased;font-feature-settings:"calt" 0}
+::selection{background:var(--ember);color:var(--bg)}
+a{color:var(--ink);text-decoration-color:var(--faint);text-underline-offset:4px}
+a:hover{color:var(--ember);text-decoration-color:var(--ember)}
+:focus-visible{outline:2px solid var(--ember);outline-offset:3px}
+button{font:inherit;color:var(--dim);background:none;border:0;cursor:pointer;padding:6px 8px;margin:-6px -8px}
+button:hover{color:var(--ember)}
+.tick{position:fixed;width:26px;height:26px;pointer-events:none;z-index:60;opacity:.35}
+.tick i{position:absolute;background:var(--ink);display:block}
+.tick .h{width:26px;height:1px}.tick .v{width:1px;height:26px}
+.tick.tl{top:12px;left:12px}.tick.tr{top:12px;right:12px}
+.tick.bl{bottom:12px;left:12px}.tick.br{bottom:12px;right:12px}
+.tick.tr .h,.tick.br .h{right:0}.tick.tr .v,.tick.br .v{right:0}
+.tick.bl .v,.tick.br .v{bottom:0}.tick.bl .h,.tick.br .h{bottom:0}
+header.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
+header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;display:flex;
+  align-items:baseline;justify-content:space-between;gap:12px}
+.crumb{font-size:.85rem}
+.crumb a{text-decoration:none}.crumb .sep{color:var(--mute);padding:0 6px}
+.crumb .here{color:var(--dim)}
+.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+#clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+main{max-width:var(--w);margin-inline:auto;padding:56px 20px 30px}
+h1{margin:0;font-weight:800;letter-spacing:.01em;font-size:clamp(1.3rem,3vw,1.7rem)}
+.sub{margin:14px 0 0;color:var(--dim);font-size:.9rem}
+/* the graph — a terminal instrument, not a glossy app */
+.graph{position:relative;border:1px solid var(--line);margin-top:26px}
+#kg{display:block;width:100%;height:clamp(340px,52vh,470px);touch-action:pan-y}
+.hint{position:absolute;left:12px;top:8px;font-size:.7rem;color:var(--faint);
+  letter-spacing:.03em;pointer-events:none}
+.gx{position:absolute;right:8px;top:2px;font-size:.7rem;color:var(--mute);letter-spacing:.03em}
+.gx:hover{color:var(--ember)}
+.graph.full{position:fixed;inset:0;z-index:90;margin:0;border:0;background:var(--bg)}
+.graph.full #kg{height:100vh;height:100dvh}
+.legend{display:flex;gap:10px 26px;margin-top:12px;font-size:.78rem;color:var(--mute);flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:9px}
+.legend b{color:var(--dim);font-weight:400}
+.lg{width:22px;height:22px;flex-shrink:0}
+/* note list (mirrors the log's bracket-tag rows) */
+.rows{margin-top:30px;border-bottom:1px dashed var(--line)}
+.row{display:flex;justify-content:space-between;gap:18px;align-items:baseline;
+  padding:13px 0;border-top:1px dashed var(--line);text-decoration:none;color:var(--ink)}
+.row .rl{display:flex;gap:0 1ch;min-width:0;flex:1;align-items:baseline}
+.row .rt{font-weight:500;min-width:0;flex:1}
+.row .rg{width:11ch;flex-shrink:0;color:var(--faint);white-space:pre}
+.row .rd{color:var(--mute);font-size:.8rem;white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums}
+.row:hover .rt{color:var(--ember)}
+.arw-r,.arw-l{display:inline-block;transition:transform .14s steps(2,end)}
+a:hover .arw-r{transform:translateX(6px)}
+a:hover .arw-l{transform:translateX(-6px)}
+/* the drawer — right sheet on desktop, bottom sheet on mobile */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(400px,94vw);background:var(--bg);
+  border-left:1px solid var(--line);transform:translateX(103%);transition:transform .22s ease;
+  z-index:95;padding:52px 24px 30px;overflow-y:auto}
+.drawer.open{transform:none}
+.drawer .x{position:absolute;top:12px;right:14px;font-size:1.05rem;line-height:1}
+.ex{position:absolute;top:16px;left:24px;font-size:.78rem;text-decoration:none;display:none;
+  border-bottom:1px solid var(--faint);padding:2px 0}
+.ex:hover{border-color:var(--ember)}
+.arw{display:inline-block;transition:transform .14s steps(2,end)}
+a:hover .arw{transform:rotate(45deg)}
+.stat{position:absolute;right:12px;bottom:8px;font-size:.68rem;color:var(--faint);
+  letter-spacing:.03em;pointer-events:none}
+#d-tag{color:var(--faint);font-size:.85rem}
+#d-title{margin:8px 0 0;font-size:1.12rem;font-weight:800;line-height:1.45}
+#d-meta{margin-top:10px;font-size:.72rem;color:var(--mute);letter-spacing:.1em;text-transform:uppercase}
+#d-scope{margin-top:18px;font-size:.9rem;color:var(--dim)}
+.d-h{margin:26px 0 0;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--mute)}
+#d-links{margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:.88rem}
+#d-links a{text-decoration:none;border-bottom:1px solid var(--faint);width:max-content;
+  max-width:100%;padding:2px 0}
+#d-links a:hover{border-color:var(--ember)}
+#d-page{display:none;margin-top:26px;font-size:.9rem;text-decoration:none;
+  border-bottom:1px solid var(--faint);padding:8px 2px 5px}
+#d-page:hover{border-color:var(--ember)}
+
+/* --- writing in progress: a row that is claimed but unwritten. not a link,
+   so it cannot be a dead click; the pulse says "being written", not "missing". --- */
+.row.wip{cursor:default}
+.row.wip .rt{color:var(--dim)}
+.row.wip .rg{color:var(--faint)}
+.row.wip:hover .rt{color:var(--dim)}
+footer{border-top:1px solid var(--line);margin-top:56px}
+footer .wrap{max-width:var(--w);margin-inline:auto;padding:34px 20px;display:grid;
+  grid-template-columns:minmax(0,1fr) 72px;gap:20px;align-items:start}
+.back{text-decoration:none;font-size:.9rem;border-bottom:1px solid var(--faint);padding:10px 2px 6px;display:inline-block}
+.back:hover{border-color:var(--ember)}
+.law{margin-top:16px;font-size:.78rem;color:var(--mute);line-height:2}
+#orb{width:72px;height:72px;justify-self:end}
+@media (max-width:640px){.tick{display:none}
+  .drawer{top:auto;left:0;right:0;width:100%;max-height:72vh;border-left:0;
+    border-top:1px solid var(--line);transform:translateY(103%)}
+  footer .wrap{grid-template-columns:1fr}#orb{justify-self:start}}
+@media (prefers-reduced-motion:reduce){.drawer,.arw-r,.arw-l{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="tick tl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick tr" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick bl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick br" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+
+<header class="top">
+  <div class="bar">
+    <nav class="crumb" aria-label="breadcrumb">
+      <a href="index.html">d-s.</a><span class="sep">/</span><span class="here">garden</span>
+    </nav>
+    <div class="hud">
+      <span id="clock">lagos --:--</span>
+      <button id="theme" type="button" aria-pressed="true">dark</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <h1>the garden</h1>
+  <p class="sub">a second brain, kept in public: distilled notes from papers, manuals,
+    and the machine itself — mapped by concept, corrected in place, never apologised for.
+    the log records what happened; the garden holds what i currently believe is true.</p>
+
+  <div class="graph">
+    <span class="hint"># concept map — drag nodes · click to read</span>
+    <span class="stat" id="gstat"></span>
+    <button class="gx" id="gx" type="button">expand</button>
+    <canvas id="kg"></canvas>
+  </div>
+  <div class="legend">
+    <span><canvas class="lg" data-s="seed" aria-hidden="true"></canvas><span><b>seed</b> — circling it, nothing written</span></span>
+    <span><canvas class="lg" data-s="growing" aria-hidden="true"></canvas><span><b>growing</b> — readable, still moving</span></span>
+    <span><canvas class="lg" data-s="evergreen" aria-hidden="true"></canvas><span><b>evergreen</b> — finished, safe to build on</span></span>
+  </div>
+
+  <p class="sub">six seeds and nothing planted. a seed is a thing i keep circling —
+    read about, half-understand, and cannot yet write down without hedging. it becomes
+    a note the day the engine forces the lesson and i can defend it in three sentences.
+    the breathing ones are the ones on my mind.</p>
+  <div class="rows" id="grows"></div>
+  <noscript><p class="sub">the graph needs javascript. the six seeded topics:
+    mmap &amp; the page cache · gguf, byte by byte · avx2 intrinsics ·
+    perf(1) &amp; rapl · 4-bit quantization · speculative decoding.</p></noscript>
+</main>
+
+<aside class="drawer" id="drawer" aria-label="note synthesis">
+  <button class="x" id="dx" type="button" aria-label="close">×</button>
+  <a class="ex" id="d-ex" href="garden.html">open <span class="arw">↗</span></a>
+  <div id="d-tag">[seed]</div>
+  <h2 id="d-title">—</h2>
+  <div id="d-meta">—</div>
+  <p id="d-scope">—</p>
+  <div class="d-h">connects to</div>
+  <div id="d-links"></div>
+  <a id="d-page" href="garden.html">read the full note <span class="arw-r">→</span></a>
+</aside>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="back" href="index.html#garden"><span class="arw-l">←</span> home</a>
+      <div class="law">law 1 — a claim a stranger can't reproduce in 30 minutes doesn't exist.
+        an edge in this graph is a claim.</div>
+    </div>
+    <canvas id="orb" aria-hidden="true"></canvas>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var doc=document, root=doc.documentElement;
+var reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function q(s){return doc.querySelector(s)}
+function qa(s){return Array.prototype.slice.call(doc.querySelectorAll(s))}
+function cvar(n){return getComputedStyle(root).getPropertyValue(n).trim()}
+function mulberry32(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;
+  var r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;
+  return ((r^(r>>>14))>>>0)/4294967296}}
+
+/* ---- DATA — the only part you hand-edit (see ritual in the header comment) ---- */
+var NODES=[
+{id:"mmap",label:"mmap & the page cache",status:"seed",planted:null,tended:null,page:null,
+ scope:"how a multi-gb weight file streams through 8 gb of ram — page faults, readahead, madvise, and what the kernel is actually doing under the engine."},
+{id:"gguf",label:"gguf, byte by byte",status:"seed",planted:null,tended:null,page:null,
+ scope:"the weight-file format read with a hex editor: header, metadata, tensor offsets, alignment — the map the engine walks at load time."},
+{id:"avx2",label:"avx2 intrinsics",status:"seed",planted:null,tended:null,page:null,
+ scope:"the 8-wide float kernels the engine lives on — fma, aligned loads, horizontal sums, and where the cycles actually go."},
+{id:"perf",label:"perf(1) & rapl",status:"seed",planted:null,tended:null,page:null,
+ scope:"reading the truth from the machine: cycles, cache misses, joules from the wall — the instruments behind every published number."},
+{id:"quant",label:"4-bit quantization",status:"seed",planted:null,tended:null,page:null,
+ scope:"packing weights into 4 bits without lobotomizing the model — block scales, dequant kernels, and the accuracy bill."},
+{id:"spec",label:"speculative decoding",status:"seed",planted:null,tended:null,page:null,
+ scope:"a small model drafts, the big one verifies — the accept-rate arithmetic that moves tokens-per-joule."}
+];
+var LINKS=[["mmap","gguf"],["gguf","quant"],["quant","spec"],
+           ["avx2","quant"],["avx2","perf"],["perf","spec"],["mmap","perf"]];
+/* ------------------------------------------------------------------------------ */
+
+var byId={};NODES.forEach(function(n){byId[n.id]=n});
+var L=LINKS.map(function(p){return [byId[p[0]],byId[p[1]]]});
+
+/* seeded initial layout, then a hand-rolled force sim:
+   coulomb repulsion + spring edges + weak centering. no library. */
+var rnd=mulberry32(42);
+NODES.forEach(function(n,i){
+  var a=6.28318*i/NODES.length+rnd()*0.6, r=70+rnd()*50;
+  n.x=Math.cos(a)*r;n.y=Math.sin(a)*r;n.vx=0;n.vy=0;
+});
+
+var cv=q("#kg"), ctx=cv.getContext("2d"), W=0,H=0;
+var FONT=cvar("--mono");
+var alpha=1, raf=0, hov=null, sel=null, dragN=null;
+var fitS=1, fitX=0, fitY=0;
+function SX(n){return W/2+(n.x-fitX)*fitS}
+function SY(n){return H/2+(n.y-fitY)*fitS}
+function updateFit(){
+  var minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9,i,n;
+  for(i=0;i<NODES.length;i++){n=NODES[i];
+    if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;
+    if(n.y<miny)miny=n.y;if(n.y>maxy)maxy=n.y;}
+  var bw=(maxx-minx)+170, bh=(maxy-miny)+84;
+  var tS=Math.max(0.3,Math.min(1.6,Math.min((W-36)/bw,(H-52)/bh)));
+  var tX=(minx+maxx)/2, tY=(miny+maxy)/2;
+  var k=reduced?1:0.18; /* elastic camera: ease toward the fit */
+  fitS+=(tS-fitS)*k; fitX+=(tX-fitX)*k; fitY+=(tY-fitY)*k;
+}
+
+function size(){
+  var rect=cv.getBoundingClientRect();
+  W=Math.max(1,Math.round(rect.width));H=Math.max(1,Math.round(rect.height));
+  var dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function tick(){
+  var i,j,a,b,dx,dy,d2,d,f,ux,uy,n;
+  for(i=0;i<NODES.length;i++)for(j=i+1;j<NODES.length;j++){
+    a=NODES[i];b=NODES[j];dx=b.x-a.x;dy=b.y-a.y;d2=dx*dx+dy*dy;if(d2<1)d2=1;
+    d=Math.sqrt(d2);ux=dx/d;uy=dy/d;f=2600/d2;
+    a.vx-=ux*f;a.vy-=uy*f;b.vx+=ux*f;b.vy+=uy*f;
+  }
+  for(i=0;i<L.length;i++){
+    a=L[i][0];b=L[i][1];dx=b.x-a.x;dy=b.y-a.y;d=Math.sqrt(dx*dx+dy*dy)||1;
+    f=(d-126)*0.055;ux=dx/d;uy=dy/d;
+    a.vx+=ux*f;a.vy+=uy*f;b.vx-=ux*f;b.vy-=uy*f;
+  }
+  for(i=0;i<NODES.length;i++){
+    n=NODES[i];
+    if(n!==dragN){
+      n.vx-=n.x*0.010;n.vy-=n.y*0.010;
+      n.vx*=0.8;n.vy*=0.8;
+      n.x+=n.vx*alpha;n.y+=n.vy*alpha;
+    }
+  }
+  alpha*=0.986;
+}
+function hashId(s){var h=7;for(var i=0;i<s.length;i++)
+  h=Math.imul(h^s.charCodeAt(i),2654435761);return h>>>0}
+function pal(){return {ink:cvar("--ink"),ember:cvar("--ember"),dim:cvar("--dim"),
+  mute:cvar("--mute"),faint:cvar("--faint")}}
+/* nodes are stipple clusters: maturity IS dot density.
+   seed = sparse ring - growing = ring + heart - evergreen = mini-orb */
+function drawNode(c,x,y,status,act,key,P,k){
+  k=k||1;var rnd=mulberry32(hashId(key||status));
+  var col=act?P.ember:(status==="evergreen"?P.ink:status==="growing"?P.dim:P.mute);
+  /* seeds breathe. same 1.5s rhythm as the dots on the log and writings rows —
+     one grammar site-wide: a pulse means unfinished. phase is offset per node so
+     the map looks like thinking, not a metronome. frozen under reduced-motion. */
+  var breathe=1;
+  if(status==="seed"&&!reduced&&key!=="legend"){
+    breathe=0.55+0.45*(0.5+0.5*Math.sin(Date.now()/1500*6.283+hashId(key||"")%628/100));
+  }
+  function dot(dx,dy,r){c.fillStyle=col;c.globalAlpha=breathe;c.beginPath();
+    c.arc(x+dx*k,y+dy*k,r*k,0,6.283);c.fill();c.globalAlpha=1}
+  var i,a;
+  if(status==="seed"){
+    for(i=0;i<7;i++){a=6.283*i/7+rnd()*0.25;dot(Math.cos(a)*6,Math.sin(a)*6,1.15)}
+  }else if(status==="growing"){
+    dot(0,0,1.5);
+    for(i=0;i<10;i++){a=6.283*i/10+rnd()*0.2;dot(Math.cos(a)*7,Math.sin(a)*7,1.2)}
+  }else{
+    dot(0,0,2.1);
+    for(i=0;i<8;i++){a=6.283*i/8+0.3;dot(Math.cos(a)*4.6,Math.sin(a)*4.6,1.35)}
+    for(i=0;i<12;i++){a=6.283*i/12+rnd()*0.15;dot(Math.cos(a)*8.2,Math.sin(a)*8.2,1.1)}
+  }
+  if(act){c.strokeStyle=P.ember;c.lineWidth=1;
+    c.beginPath();c.arc(x,y,12*k,0,6.283);c.stroke()}
+}
+/* edges are stippled paths — seeded dots, like the ember rules */
+function drawEdge(a,b,hot,fade,idx,P){
+  var ax=SX(a),ay=SY(a),bx=SX(b),by=SY(b);
+  var dx=bx-ax,dy=by-ay,Ln=Math.sqrt(dx*dx+dy*dy)||1;
+  var steps=Math.max(3,Math.round(Ln/7));
+  var rnd=mulberry32(101+idx), px=-dy/Ln, py=dx/Ln, i,t,j;
+  ctx.globalAlpha=fade?0.28:1;
+  ctx.fillStyle=hot?P.ember:P.faint;
+  for(i=1;i<steps;i++){
+    t=i/steps;j=(rnd()*2-1)*0.9;
+    ctx.beginPath();
+    ctx.arc(ax+dx*t+px*j,ay+dy*t+py*j,hot?1.15:0.95,0,6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+function render(){
+  updateFit();
+  ctx.clearRect(0,0,W,H);
+  var P=pal(),i,n,x,y,act,hot;
+  for(i=0;i<L.length;i++){
+    var a=L[i][0],b=L[i][1];
+    hot=(sel&&(a===sel||b===sel))||(hov&&(a===hov||b===hov));
+    drawEdge(a,b,hot,((sel||hov)&&!hot),i,P);
+  }
+  ctx.font="11px "+FONT;ctx.textAlign="center";ctx.textBaseline="top";
+  for(i=0;i<NODES.length;i++){
+    n=NODES[i];x=SX(n);y=SY(n);act=(n===sel||n===hov);
+    drawNode(ctx,x,y,n.status,act,n.id,P,1);
+    ctx.fillStyle=act?P.ink:P.mute;
+    var flip=false;
+    for(var j2=0;j2<NODES.length;j2++){if(j2===i)continue;
+      var o=NODES[j2],ddx=SX(o)-x,ddy=SY(o)-y;
+      if(Math.abs(ddx)<72&&ddy>4&&ddy<44){flip=true;break}}
+    if(flip){ctx.textBaseline="bottom";ctx.fillText(n.label,x,y-16);ctx.textBaseline="top"}
+    else{ctx.fillText(n.label,x,y+16)}
+  }
+}
+function drawLegend(){
+  var P=pal();
+  qa(".lg").forEach(function(cv2){
+    var dpr=Math.min(2,window.devicePixelRatio||1),S2=22;
+    cv2.width=S2*dpr;cv2.height=S2*dpr;
+    var c=cv2.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);
+    drawNode(c,S2/2,S2/2,cv2.getAttribute("data-s"),false,"legend",P,0.92);
+  });
+}
+function frame(){
+  tick();render();
+  if(alpha>0.02){raf=requestAnimationFrame(frame)}
+  else{raf=0;alpha=0;render();idle()}
+}
+/* idle heartbeat: once the layout settles, keep repainting at ~12fps so the seed
+   nodes visibly breathe. render only — the physics sim is NOT re-run here, so this
+   costs a paint and nothing else. stops when the tab is hidden, when the user asks
+   for reduced motion, and the moment there are no seeds left to breathe. */
+var idleT=0;
+function idle(){
+  clearTimeout(idleT);
+  if(reduced||doc.hidden)return;
+  if(!NODES.some(function(n){return n.status==="seed"}))return;
+  idleT=setTimeout(function(){render();idle()},80);
+}
+doc.addEventListener("visibilitychange",function(){doc.hidden?clearTimeout(idleT):idle()});
+function heat(a){clearTimeout(idleT);alpha=Math.max(alpha,a);
+  if(!raf)raf=requestAnimationFrame(frame)}
+
+/* pointer: hover highlights, drag re-heats, click opens the drawer */
+function pt(e){var r=cv.getBoundingClientRect();
+  return {x:(e.clientX-r.left-W/2)/fitS+fitX, y:(e.clientY-r.top-H/2)/fitS+fitY}}
+function hit(p){var t=18/fitS,best=null,bd=t*t,i,n,dx,dy,d;
+  for(i=0;i<NODES.length;i++){n=NODES[i];dx=n.x-p.x;dy=n.y-p.y;d=dx*dx+dy*dy;
+    if(d<bd){bd=d;best=n}}return best}
+var dx0=0,dy0=0,downOn=false;
+cv.addEventListener("pointermove",function(e){
+  var p=pt(e);
+  if(dragN){dragN.x=p.x;dragN.y=p.y;dragN.vx=0;dragN.vy=0;
+    if(reduced)render();else heat(0.35);return}
+  var h=hit(p);
+  if(h!==hov){hov=h;cv.style.cursor=h?"pointer":"default";render()}
+});
+cv.addEventListener("pointerdown",function(e){
+  var p=pt(e),h=hit(p);
+  dx0=e.clientX;dy0=e.clientY;downOn=true;
+  if(h){dragN=h;try{cv.setPointerCapture(e.pointerId)}catch(err){}}
+});
+cv.addEventListener("pointerup",function(e){
+  var movedFar=Math.abs(e.clientX-dx0)+Math.abs(e.clientY-dy0)>5;
+  if(dragN&&!movedFar){
+    select(dragN,true);
+    try{history.replaceState(null,"","#"+dragN.id)}catch(err){}
+  }else if(dragN&&movedFar){
+    if(reduced){dragN=null;alpha=0.5;while(alpha>0.02)tick();alpha=0;render()}
+    else{heat(0.5)}
+  }else if(!dragN&&downOn&&!movedFar){closeDrawer()}
+  dragN=null;downOn=false;
+});
+cv.addEventListener("pointerleave",function(){
+  if(!dragN&&hov){hov=null;cv.style.cursor="default";render()}
+});
+/* mobile: page scroll stays free on empty canvas; touching a NODE prevents
+   the scroll for that gesture so drag works */
+cv.addEventListener("touchstart",function(e){
+  var t=e.touches[0],r=cv.getBoundingClientRect();
+  var p={x:t.clientX-r.left-W/2,y:t.clientY-r.top-H/2};
+  if(hit(p))e.preventDefault();
+},{passive:false});
+
+/* drawer */
+var drawer=q("#drawer");
+function select(n,open){
+  sel=n;
+  q("#d-tag").textContent="["+n.status+"]";
+  q("#d-title").textContent=n.label;
+  q("#d-meta").textContent=n.planted?
+    ("planted "+n.planted+" · last tended "+(n.tended||n.planted)):
+    "not planted · still circling this one";
+  q("#d-scope").textContent=n.scope;
+  var box=q("#d-links");box.innerHTML="";
+  L.forEach(function(l){
+    var o=l[0]===n?l[1]:(l[1]===n?l[0]:null);if(!o)return;
+    var a=doc.createElement("a");a.href="#"+o.id;a.textContent=o.label;
+    box.appendChild(a);
+  });
+  var pg=q("#d-page"), ex=q("#d-ex");
+  if(n.page){pg.href=n.page;pg.style.display="inline-block";
+    ex.href=n.page;ex.style.display="inline"}
+  else{pg.style.display="none";ex.style.display="none"}
+  if(open)drawer.classList.add("open");
+  render();
+}
+function closeDrawer(){
+  drawer.classList.remove("open");sel=null;
+  try{history.replaceState(null,"",location.pathname+location.search)}catch(err){}
+  render();
+}
+q("#dx").addEventListener("click",closeDrawer);
+doc.addEventListener("keydown",function(e){
+  if(e.key!=="Escape")return;
+  if(isFull){setFull(false)}else{closeDrawer()}
+});
+function fromHash(){var id=location.hash.slice(1);
+  if(id&&byId[id])select(byId[id],true)}
+window.addEventListener("hashchange",fromHash);
+
+/* fullscreen: fixed overlay (more reliable than the fullscreen api on ios) */
+var gpanel=q(".graph"), gx=q("#gx"), isFull=false;
+function setFull(v){
+  isFull=v;
+  gpanel.classList.toggle("full",v);
+  gx.textContent=v?"close":"expand";
+  doc.body.style.overflow=v?"hidden":"";
+  size();
+  if(reduced)render();else heat(0.3);
+}
+gx.addEventListener("click",function(){setFull(!isFull)});
+
+/* note list — rebuilt from NODES, mirroring the log's bracket tags */
+function pad(s,w){while(s.length<w)s+=" ";return s}
+function buildRows(){
+  var box=q("#grows");box.innerHTML="";
+  NODES.forEach(function(n){
+    var a=doc.createElement("a");a.className="row";a.href="#"+n.id;
+    var rl=doc.createElement("span");rl.className="rl";
+    var rg=doc.createElement("span");rg.className="rg";
+    rg.textContent=pad("["+n.status+"]",11);
+    var rt=doc.createElement("span");rt.className="rt";rt.textContent=n.label;
+    rl.appendChild(rg);rl.appendChild(rt);
+    var rd=doc.createElement("span");rd.className="rd";
+    rd.textContent=n.tended||n.planted||"—";
+    a.appendChild(rl);a.appendChild(rd);
+    box.appendChild(a);
+  });
+}
+
+/* theme / clock / orb — same shell as every page */
+var themeBtn=q("#theme");
+if(root.getAttribute("data-theme")==="dark"){
+  themeBtn.textContent="light";themeBtn.setAttribute("aria-pressed","false");
+}
+themeBtn.addEventListener("click",function(){
+  var light=root.getAttribute("data-theme")!=="light";
+  root.setAttribute("data-theme",light?"light":"dark");
+  themeBtn.textContent=light?"dark":"light";
+  themeBtn.setAttribute("aria-pressed",light?"true":"false");
+  q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
+  /* STORAGE (uncomment after deploy): try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){} */
+  drawOrb();render();drawLegend();
+});
+var clock=q("#clock");
+var fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",hour12:false});
+function tickClock(){clock.textContent="lagos "+fmt.format(new Date())}
+tickClock();setInterval(tickClock,30000);
+function drawOrb(){
+  var el=q("#orb");if(!el)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1),S=72;
+  el.width=S*dpr;el.height=S*dpr;
+  var c=el.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,S,S);
+  var ink=cvar("--ink"),ember=cvar("--ember"),k=S/62,rr=mulberry32(7);
+  var pts=[[0,0,2.2]],rings=[[8,6],[14,10],[20,14],[25,16]];
+  rings.forEach(function(rc){var R=rc[0],cnt=rc[1];
+    for(var j=0;j<cnt;j++){
+      var a=6.28318*j/cnt+R*0.35,dx=R*Math.cos(a),dy=R*Math.sin(a);
+      var shade=Math.max(0,(dx+dy)/(1.414*R));
+      pts.push([dx,dy,0.9+1.4*shade+(rr()*0.3-0.15)]);
+    }});
+  pts.forEach(function(p,i){
+    c.fillStyle=(i%9===4)?ember:ink;
+    c.beginPath();c.arc(S/2+p[0]*k,S/2+p[1]*k,Math.max(1.1,p[2]*k),0,6.283);c.fill();
+  });
+}
+var rsz=null;
+window.addEventListener("resize",function(){clearTimeout(rsz);rsz=setTimeout(function(){
+  size();if(reduced)render();else heat(0.25)},180)});
+
+/* init: settle the graph (silently under reduced motion), then honour any #hash */
+size();
+if(reduced){while(alpha>0.02)tick();alpha=0;render()}
+else{heat(1)}
+q("#gstat").textContent=NODES.length+" nodes · "+LINKS.length+" edges · seed 42";
+buildRows();drawOrb();drawLegend();fromHash();
+if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(function(){FONT=cvar("--mono");render();drawOrb();drawLegend()}).catch(function(){})}
+})();
+</script>
+</body>
+</html>

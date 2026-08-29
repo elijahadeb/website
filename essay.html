@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<!--
+  dead-silicon — writing template (copy per essay or note)
+  SAMPLE CONTENT: this file doubles as the skeleton for the real week-two essay.
+  EDIT: <title> + og (2), crumb, data-glyph + fig caption, h1, meta, body.
+  SYSTEM GLYPH — rule zero: the stipple is a schematic of THIS page's concept,
+  computed, not drawn. registry below: die-section · mem-grid · node-lattice ·
+  waveform. if the concept has no honest schematic, delete the figure — empty
+  beats vibes. one glyph per page, always captioned as a figure plate.
+-->
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>it wasn't obsolete. it was abandoned. · dead-silicon</title>
+<meta name="description" content="An essay from the dead-silicon project.">
+<meta property="og:title" content="it wasn&#39;t obsolete. it was abandoned. · dead-silicon">
+<meta property="og:description" content="An essay from the dead-silicon project — the thinking layer.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- SHARE CARD. og:url and og:image must stay ABSOLUTE — x, whatsapp and slack
+     fetch from their own servers, so a relative path unfurls as a blank box.
+     og.png is drawn by banner.py: same seeded orb as the footer, 12x scale. -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://deadsilicon.com/essay.html">
+<meta property="og:site_name" content="dead-silicon">
+<meta property="og:image" content="https://deadsilicon.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="dead silicon — a stippled orb beside the words 'a from-scratch llm inference engine, built on a gtx 1050 and 16gb of ram.'">
+<meta name="twitter:image" content="https://deadsilicon.com/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23E8E6DF'/%3E%3Ccircle cx='23' cy='12' r='2' fill='%23CF6A2B'/%3E%3Ccircle cx='10' cy='21' r='2' fill='%23E8E6DF'/%3E%3Ccircle cx='20' cy='22' r='1.6' fill='%23E8E6DF'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#E8E6DF">
+<link rel="apple-touch-icon" href="touch-icon.png">
+<script>
+/* theme boot: LIGHT is the default, full stop — the OS preference is deliberately
+   ignored, because cream is the identity and a visitor in os dark mode should still
+   land on the site as it was designed. dark is opt-in via the toggle only.
+   after deploy, uncomment the STORAGE line here and in the toggle handler so a
+   visitor's manual choice sticks site-wide. */
+(function(){var d=false;
+/* STORAGE: try{d=localStorage.getItem("ds-theme")==="dark"}catch(e){} */
+if(d){document.documentElement.setAttribute("data-theme","dark");
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#0B0C0E");}})();
+</script>
+<style>
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono"),local("JetBrainsMono-Regular"),url("fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono ExtraBold"),local("JetBrainsMono-ExtraBold"),url("fonts/JetBrainsMono-ExtraBold.woff2") format("woff2");font-weight:800;font-display:swap}
+:root{--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;--w:66ch}
+:root[data-theme="dark"]{--bg:#0B0C0E;--panel:#101216;--ink:#E8E6DF;--dim:rgba(232,230,223,.66);
+  --mute:rgba(232,230,223,.52);--faint:rgba(232,230,223,.26);
+  --line:rgba(232,230,223,.13);--ember:#CF6A2B}
+:root[data-theme="light"]{--bg:#E8E6DF;--panel:#DFDCD2;--ink:#17181B;--dim:rgba(23,24,27,.72);
+  --mute:rgba(23,24,27,.62);--faint:rgba(23,24,27,.30);
+  --line:rgba(23,24,27,.16);--ember:#964614}
+*{box-sizing:border-box}
+[id]{scroll-margin-top:56px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);
+  font-size:15.5px;line-height:1.8;-webkit-font-smoothing:antialiased;font-feature-settings:"calt" 0}
+::selection{background:var(--ember);color:var(--bg)}
+a{color:var(--ink);text-decoration-color:var(--faint);text-underline-offset:4px}
+a:hover{color:var(--ember);text-decoration-color:var(--ember)}
+:focus-visible{outline:2px solid var(--ember);outline-offset:3px}
+button{font:inherit;color:var(--dim);background:none;border:0;cursor:pointer;padding:6px 8px;margin:-6px -8px}
+button:hover{color:var(--ember)}
+.tick{position:fixed;width:26px;height:26px;pointer-events:none;z-index:60;opacity:.35}
+.tick i{position:absolute;background:var(--ink);display:block}
+.tick .h{width:26px;height:1px}.tick .v{width:1px;height:26px}
+.tick.tl{top:12px;left:12px}.tick.tr{top:12px;right:12px}
+.tick.bl{bottom:12px;left:12px}.tick.br{bottom:12px;right:12px}
+.tick.tr .h,.tick.br .h{right:0}.tick.tr .v,.tick.br .v{right:0}
+.tick.bl .v,.tick.br .v{bottom:0}.tick.bl .h,.tick.br .h{bottom:0}
+header.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
+#prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--ember);
+  transform:scaleX(0);transform-origin:0 50%;pointer-events:none}
+header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;display:flex;
+  align-items:baseline;justify-content:space-between;gap:12px}
+.crumb{font-size:.85rem}
+.crumb a{text-decoration:none}.crumb .sep{color:var(--mute);padding:0 6px}
+.crumb .here{color:var(--dim)}
+.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+#clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+article{max-width:var(--w);margin-inline:auto;padding:56px 20px 30px}
+figure.glyph{margin:0 0 34px}
+#glyph{display:block;width:150px;height:120px;margin-inline:auto}
+h1{font-size:clamp(1.4rem,3.4vw,1.9rem);font-weight:800;line-height:1.35;margin:0}
+.meta{color:var(--mute);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 34px}
+.meta b{color:var(--ember);font-weight:800}
+.arw-r,.arw-l{display:inline-block;transition:transform .14s steps(2,end)}
+a:hover .arw-r{transform:translateX(6px)}
+a:hover .arw-l{transform:translateX(-6px)}
+@media (prefers-reduced-motion:reduce){.arw-r,.arw-l{transition:none}}
+article p{margin:18px 0;color:var(--dim)}
+article p b{color:var(--ink)}
+code{background:var(--panel);padding:2px 6px;font-size:.88em}
+pre{background:var(--panel);border:1px solid var(--line);padding:16px 18px;overflow-x:auto;
+  font-size:.85rem;line-height:1.7;margin:24px 0}
+pre code{background:none;padding:0}
+pre,code{font-feature-settings:"calt" 1}
+footer{border-top:1px solid var(--line);margin-top:56px}
+footer .wrap{max-width:var(--w);margin-inline:auto;padding:34px 20px;display:grid;
+  grid-template-columns:minmax(0,1fr) 72px;gap:20px;align-items:start}
+.back{text-decoration:none;font-size:.9rem;border-bottom:1px solid var(--faint);padding:10px 2px 6px;display:inline-block}
+.back:hover{border-color:var(--ember)}
+.law{margin-top:16px;font-size:.78rem;color:var(--mute);line-height:2}
+#orb{width:72px;height:72px;justify-self:end}
+@media (max-width:640px){.tick{display:none}
+  footer .wrap{grid-template-columns:1fr}#orb{justify-self:start}}
+</style>
+</head>
+<body>
+
+<div class="tick tl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick tr" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick bl" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+<div class="tick br" aria-hidden="true"><i class="h"></i><i class="v"></i></div>
+
+<header class="top">
+  <div class="bar">
+    <nav class="crumb" aria-label="breadcrumb">
+      <a href="index.html">d-s.</a><span class="sep">/</span><a href="writings.html">writings</a><span class="sep">/</span><span class="here">slowest-gpu</span>
+    </nav>
+    <div class="hud">
+      <span id="clock">lagos --:--</span>
+      <button id="theme" type="button" aria-pressed="true">dark</button>
+    </div>
+  </div>
+  <div id="prog" aria-hidden="true"></div>
+</header>
+
+<article>
+  <figure class="glyph">
+    <canvas id="glyph" data-glyph="die-section" aria-hidden="true"></canvas>
+  </figure>
+
+  <h1>it wasn&#39;t obsolete. it was abandoned.</h1>
+  <div class="meta">08.29.26 · <b>essay</b> · 4 min</div>
+
+  <p>scale worked. that&#39;s the uncomfortable truth. the jumps in capability we&#39;ve seen in
+    the last five years alone that have left most in awe came from compute, more data,
+    more parameters, and i&#39;m not going to pretend otherwise.</p>
+
+  <p>yet the demand for gpus keeps climbing because the current obsession with scale assumes
+    that the more compute we throw at the problem, the closer we get to agi.
+    <i>compute posing as a substitute for good engineering.</i> well i disagree. throwing infinite
+    vram at a problem just hides bad architecture. the next era of true breakthroughs won&#39;t
+    come from building more massive data centers. that path hasn&#39;t produced agi, and each
+    increment now costs more in compute and watts than the last.</p>
+
+  <p>that is the part i care about. when scaling gets expensive enough, the engineering has to
+    get better. the next gains will come from squeezing constrained hardware, relying on smart
+    code, new ideas, and approaching ai from first principles through bare-metal engineering
+    and architectures that do more with less.</p>
+
+  <p>modern ai infra is suffocating under stacks of abstraction. someone who just wants to
+    build, integrate, or understand a local model is forced through a learning curve that has
+    nothing to do with the actual science. massive python wrappers, gigabytes of dependencies,
+    heavy frameworks built on top of other frameworks. i&#39;m not arguing against abstraction
+    itself, i&#39;m arguing that the ladder is missing rungs. you should be able to climb down
+    when you need to, <i>especially now that the weights are open.</i></p>
+
+  <h2>the card</h2>
+
+  <p>the hardware is a gtx 1050. <b>4gb vram, 112 gb/s, sm_61, pcie x16</b>, in a laptop with
+    16gb of system ram.</p>
+
+  <p>the industry calls pascal obsolete for ai. it isn&#39;t obsolete. <i>it was abandoned.</i></p>
+
+  <p>pascal, compute capability 6.1, is the last consumer architecture nvidia built before tensor cores. 
+    and the software simply stopped speaking to it. 
+    triton refuses to compile below sm_70, so it has to be volta and up. 
+    flashattention 2 needs ampere, nvidia’s microarchitecture turing is supported by a separate fork, 
+    flashattention 3 is exclusively designed for hopper gpus, and here is the thing, 
+    pascal is excluded from every one of them.  
+    moreover, cuda 13 outrightly removed compilation and library support for maxwell, pascal and volta.</p>
+
+  <p>well the card still works. 
+    it draws power, it runs kernels, it does math. 
+    in fact raw cuda still compiles for it on the 12.x toolkit. 
+    what is gone is everything built on top, this includes the kernel dsl, the attention implementations, the libraries everyone actually uses. 
+    you can still write to the metal. 
+    you just can&#39;t use anything anyone has written in the last four years. 
+  </p>
+
+  <p>
+    here is the part that actually worries me. 
+    <b>that abandoned card has the fastest memory in this entire machine.</b>
+    which is around 112 gb/s. 
+    the system ram it is bolted next to… does around 25 gb/s. 
+    the sata ssd where a 70b actually has to live does about 0.43 gb/s. 
+    the fastest tier in this laptop is the one the ecosystem walked away from, and i can't use it for attention because triton won't compile for it.
+  </p>
+
+  <p>that isn&#39;t a physics problem. that&#39;s a decision someone made.</p>
+
+  <p>i have the key to a door that has been bricked over.</p>
+
+  <p><i>[note: i measured the ram with sysbench, disk with fio at 24gb and direct i/o so nothing actually ends up sitting in page cache. my first three attempts at this pointed at /tmp <i>(system directory)</i>, which is a ram disk on this machine, and it cheerfully reported 7 gb/s. the tools will lie to you if you let them. so being extra careful is mandatory.]</i></p>
+  
+  <h2>so the first phase runs on the cpu</h2>
+
+  <p>avx2 kernels, hand written, from scratch. i know the cpu isn&#39;t the faster path. it&#39;s
+    the one that isn&#39;t locked.</p>
+
+  <p>the gpu work happens later in the year, and it happens on rented ampere. that&#39;s me being honest. 
+    i&#39;m not going to pretend a card the toolchain refuses to compile
+    for is secretly enough, and writing triton means renting hardware that can run triton.
+    equally, what i won&#39;t do is let the rental become the default, because the constraint is where the
+    understanding comes from. you learn what a memory hierarchy really costs by living inside a small
+    one, not by having enough vram that the question never comes up.</p>
+
+  <p>the 16gb ceiling isn&#39;t a limitation i have to suffer through. it&#39;s a tight environment
+    where only real effort down at the metal pays. there is nowhere to hide. you find out what
+    the silicon is actually doing, <i>usually the hard way</i>, and you bleed for every byte.</p>
+
+  <p>and in economically constrained countries, including the one i&#39;m based in, and across
+    the globe, there are billions of constrained machines. for a lot of people who can&#39;t keep
+    buying their way up against the spiraling cost of ram, going down to the metal is the only
+    door left.</p>
+
+  <h2>the hierarchy, in one laptop</h2>
+
+<pre><code>tier              bandwidth     what lives there
+gtx 1050 vram     112 gb/s      nothing yet, the stack won&#39;t talk to it
+system ram        25 gb/s       an 8b at q4, comfortably
+sata ssd          0.43 gb/s     anything bigger, at 0.01 tok/s</code></pre>
+
+  <p>the fastest tier in this machine is 263 times faster than the slowest, and i'm locked out of it.
+  </p>
+
+  <p>a 70b at q4_k_m is 42.5 gb of weights, and every single token reads all of them. divide
+    that by the disk row and you hit the absolute limit, about a hundred seconds per token. i haven&#39;t run a 70b to tell you that, it&#39;s
+    just basic maths and division doesn&#39;t need a demo.</p>
+
+  <p>
+    that spread is the entire thesis. 
+    you don&#39;t out engineer bandwidth. 
+    you either fit in memory or you pay the disk tax, and knowing exactly what the disk costs is where the real work starts. 
+    most of the arguments i read about model quality are being made by people who have never measured the number that decides whether the model runs at all.
+  </p>
+
+  <h2>what success looks like</h2>
+
+  <p>datacenter power draw is now one of the hardest limits the big labs face, and joules per
+    token is a number the field already measures. ml.energy does it on datacenter gpus. hugging
+    face rates models on it. there&#39;s a good raspberry pi study that does it with a proper
+    hardware meter.</p>
+
+  <p>what i haven&#39;t found is whole-system energy, wall-metered, including the disk, across a
+    spread of cheap heterogeneous machines that people actually own. that gap is what i&#39;m
+    going after this year.</p>
+
+  <p>the benchmarks will run on llama.cpp, not on my engine, because a number measured on
+    software nobody else runs can&#39;t be compared to anything. <b>my engine gets one row in that
+    table like everyone else, and it has to earn it.</b></p>
+
+</article>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="back" href="writings.html"><span class="arw-l">←</span> back to writings</a>
+      <div class="law">law 2: version numbers are earned in code. so are opinions.</div>
+    </div>
+    <canvas id="orb" aria-hidden="true"></canvas>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var doc=document, root=doc.documentElement;
+function q(s){return doc.querySelector(s)}
+function cvar(n){return getComputedStyle(root).getPropertyValue(n).trim()}
+function mulberry32(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;
+  var r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;
+  return ((r^(r>>>14))>>>0)/4294967296}}
+
+/* SYSTEM GLYPHS — schematics only. each source draws pure geometry in black;
+   the stippler (same idea as the wordmark band) computes the dots from it.
+   add a source ONLY if the shape could appear in a 1970s technical manual. */
+var GLYPHS={
+  "die-section":function(c,w,h){
+    c.strokeStyle="#000";c.lineWidth=6;
+    c.strokeRect(w*0.08,h*0.10,w*0.84,h*0.80);
+    c.strokeRect(w*0.22,h*0.26,w*0.56,h*0.48);
+    c.lineWidth=4;
+    for(var i=0;i<6;i++){var x=w*0.30+i*(w*0.40/5);
+      c.beginPath();c.moveTo(x,h*0.26);c.lineTo(x,h*0.74);c.stroke();}
+  },
+  "mem-grid":function(c,w,h){
+    var cols=8,rows=4,cw=w*0.84/cols,ch=h*0.72/rows,x0=w*0.08,y0=h*0.14;
+    c.lineWidth=4;c.strokeStyle="#000";c.fillStyle="#000";
+    for(var r=0;r<rows;r++)for(var k=0;k<cols;k++){
+      var x=x0+k*cw,y=y0+r*ch,n=r*cols+k;
+      if(n%5===1||n%7===3)c.fillRect(x+3,y+3,cw-6,ch-6);
+      else c.strokeRect(x+3,y+3,cw-6,ch-6);
+    }
+  },
+  "node-lattice":function(c,w,h){
+    var pts=[[0.15,0.5],[0.38,0.2],[0.38,0.8],[0.62,0.35],[0.62,0.65],[0.86,0.5]];
+    var ln=[[0,1],[0,2],[1,3],[2,4],[3,5],[4,5],[3,4]];
+    c.strokeStyle="#000";c.lineWidth=5;
+    ln.forEach(function(l){c.beginPath();
+      c.moveTo(pts[l[0]][0]*w,pts[l[0]][1]*h);
+      c.lineTo(pts[l[1]][0]*w,pts[l[1]][1]*h);c.stroke();});
+    c.fillStyle="#000";
+    pts.forEach(function(p){c.beginPath();c.arc(p[0]*w,p[1]*h,7,0,6.283);c.fill();});
+  },
+  "waveform":function(c,w,h){
+    c.strokeStyle="#000";c.lineWidth=7;
+    var y1=h*0.28,y2=h*0.72,x=w*0.06,seg=w*0.88/6;
+    c.beginPath();c.moveTo(x,y2);
+    for(var i=0;i<6;i++){var yt=(i%2===0)?y1:y2;c.lineTo(x,yt);x+=seg;c.lineTo(x,yt);}
+    c.stroke();
+  }
+};
+function hashSeed(s){var h=9;for(var i=0;i<s.length;i++)
+  h=Math.imul(h^s.charCodeAt(i),387420489);return h>>>0}
+function drawGlyph(){
+  var cv=q("#glyph");if(!cv)return;
+  var name=cv.getAttribute("data-glyph"),src=GLYPHS[name];if(!src)return;
+  var CW=150,CH=120,dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=CW*dpr;cv.height=CH*dpr;
+  var ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,CW,CH);
+  var off=doc.createElement("canvas");off.width=CW;off.height=CH;
+  var oc=off.getContext("2d",{willReadFrequently:true});
+  src(oc,CW,CH);
+  var data=oc.getImageData(0,0,CW,CH).data;
+  var rnd=mulberry32(hashSeed(name+doc.title));
+  var ink=cvar("--ink"),ember=cvar("--ember"),step=4;
+  for(var y=0;y<CH;y+=step)for(var x=0;x<CW;x+=step){
+    if(data[(y*CW+x)*4+3]>140){
+      var jx=x+(rnd()*2-1)*1.4, jy=y+(rnd()*2-1)*1.4, r=1.0+rnd()*1.1;
+      ctx.fillStyle=rnd()<0.05?ember:ink;
+      ctx.beginPath();ctx.arc(jx,jy,r,0,6.283);ctx.fill();
+    }
+  }
+}
+
+var themeBtn=q("#theme");
+if(root.getAttribute("data-theme")==="dark"){
+  themeBtn.textContent="light";themeBtn.setAttribute("aria-pressed","false");
+}
+themeBtn.addEventListener("click",function(){
+  var light=root.getAttribute("data-theme")!=="light";
+  root.setAttribute("data-theme",light?"light":"dark");
+  themeBtn.textContent=light?"dark":"light";
+  themeBtn.setAttribute("aria-pressed",light?"true":"false");
+  q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
+  /* STORAGE (uncomment after deploy): try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){} */
+  drawOrb();drawGlyph();
+});
+var clock=q("#clock");
+var fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",hour12:false});
+function tickClock(){clock.textContent="lagos "+fmt.format(new Date())}
+tickClock();setInterval(tickClock,30000);
+function drawOrb(){
+  var el=q("#orb");if(!el)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1),S=72;
+  el.width=S*dpr;el.height=S*dpr;
+  var c=el.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,S,S);
+  var ink=cvar("--ink"),ember=cvar("--ember"),k=S/62,rnd=mulberry32(7);
+  var pts=[[0,0,2.2]],rings=[[8,6],[14,10],[20,14],[25,16]];
+  rings.forEach(function(rc){var R=rc[0],cnt=rc[1];
+    for(var j=0;j<cnt;j++){
+      var a=6.28318*j/cnt+R*0.35,dx=R*Math.cos(a),dy=R*Math.sin(a);
+      var shade=Math.max(0,(dx+dy)/(1.414*R));
+      pts.push([dx,dy,0.9+1.4*shade+(rnd()*0.3-0.15)]);
+    }});
+  pts.forEach(function(p,i){
+    c.fillStyle=(i%9===4)?ember:ink;
+    c.beginPath();c.arc(S/2+p[0]*k,S/2+p[1]*k,Math.max(1.1,p[2]*k),0,6.283);c.fill();
+  });
+}
+var prog=q("#prog"), pTick=false;
+function setProg(){
+  var d=doc.documentElement, h=d.scrollHeight-window.innerHeight;
+  var v=h>0?Math.min(1,Math.max(0,(window.scrollY||d.scrollTop||0)/h)):0;
+  prog.style.transform="scaleX("+v+")";pTick=false;
+}
+window.addEventListener("scroll",function(){if(!pTick){pTick=true;requestAnimationFrame(setProg)}},{passive:true});
+setProg();
+function init(){drawOrb();drawGlyph()}
+init();
+if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(init).catch(function(){})}
+})();
+</script>
+</body>
+</html>
