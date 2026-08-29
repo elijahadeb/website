@@ -37,10 +37,9 @@
 /* theme boot: LIGHT is the default, full stop — the OS preference is deliberately
    ignored, because cream is the identity and a visitor in os dark mode should still
    land on the site as it was designed. dark is opt-in via the toggle only.
-   after deploy, uncomment the STORAGE line here and in the toggle handler so a
    visitor's manual choice sticks site-wide. */
 (function(){var d=false;
-/* STORAGE: try{d=localStorage.getItem("ds-theme")==="dark"}catch(e){} */
+try{d=localStorage.getItem("ds-theme")==="dark"}catch(e){}
 if(d){document.documentElement.setAttribute("data-theme","dark");
 var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#0B0C0E");}})();
 </script>
@@ -383,7 +382,7 @@ themeBtn.addEventListener("click",function(){
   themeBtn.textContent=light?"dark":"light";
   themeBtn.setAttribute("aria-pressed",light?"true":"false");
   q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
-  /* STORAGE (uncomment after deploy): try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){} */
+  try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){}
   drawOrb();
 });
 var clock=q("#clock");
