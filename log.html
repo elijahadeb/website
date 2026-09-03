@@ -316,10 +316,12 @@ var HASHES=[
    x:"https://x.com/elijahadeb/status/2094508977266532669?s=20",
    note:null},
 
-  {d:1, date:"09.01.26",
-   msg:"no number today. spent it on the mechanics -> simd, avx2, intel's intrinsics guide.",
-   x:"https://x.com/elijahadeb/status/2094833631868977620?s=20",
-   note:null},
+  {d:2, date:"09.01.26", 
+   msg:"no number today. spent it on the mechanics —> simd, avx2, intel's intrinsics guide. worked out which handful of intrinsics a dot product actually needs. the guide lists thousands and explains none of them.", 
+   x:"https://x.com/elijahadeb/status/2094833631868977620?s=20"},
+  {d:3, date:"09.02.26", 
+   msg:"avx2 dot product working. 4.10x over scalar, 13.4 gb/s, passes the 1e-3 bar against a float64 reference. first run showed 33.8x —> ceiling is 8x, so i knew it was wrong. i was timing my disk against my ram. got it fixed, so the correct timing shows", 
+   x:"https://x.com/elijahadeb/status/2095220114333339918?s=20"},
 ];
 /* the feed self-manages: latest 14 lines by default, then one expander that
    shows the whole year grouped by month. 365 entries stay one data block. */
