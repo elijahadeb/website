@@ -436,7 +436,7 @@ tickClock();setInterval(tickClock,30000);
    the label is a live countdown; at lagos midnight aug 29 it flips to DAY 001
    by itself. paste logged day numbers (1-based) from the console json export. */
 var START=Date.UTC(2026,7,30,23,0,0), TOTAL=365, DAYMS=86400000;
-var loggedDays=[1,2];
+var loggedDays=[1,2,3];
 var ignlabel=q("#ignlabel"), stripEl=q("#strip"), ignMode="", ignB=null, lastIdx=null;
 function pad2(n){return ("0"+n).slice(-2)}
 function buildStrip(dayIdx){
