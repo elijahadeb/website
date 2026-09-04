@@ -319,9 +319,14 @@ var HASHES=[
   {d:2, date:"09.01.26", 
    msg:"no number today. spent it on the mechanics —> simd, avx2, intel's intrinsics guide. worked out which handful of intrinsics a dot product actually needs. the guide lists thousands and explains none of them.", 
    x:"https://x.com/elijahadeb/status/2094833631868977620?s=20"},
+     
   {d:3, date:"09.02.26", 
    msg:"avx2 dot product working. 4.10x over scalar, 13.4 gb/s, passes the 1e-3 bar against a float64 reference. first run showed 33.8x —> ceiling is 8x, so i knew it was wrong. i was timing my disk against my ram. got it fixed, so the correct timing shows", 
    x:"https://x.com/elijahadeb/status/2095220114333339918?s=20"},
+  {d:4, date:"09.03.26",
+   msg:"implemented the threaded avx2 dot product and it returned exactly 0, so i spent most of this day debugging. std::async bound my args positionally to the wrong params —> every worker looped zero times, all twelve, no warning. fixed. now it runs but rel err is 3.157e-05 against 2.06e-09 single threaded, and my 1e-3 threshold called that a pass",
+   x:"",
+   note:null},
 ];
 /* the feed self-manages: latest 14 lines by default, then one expander that
    shows the whole year grouped by month. 365 entries stay one data block. */
