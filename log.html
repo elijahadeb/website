@@ -323,9 +323,15 @@ var HASHES=[
   {d:3, date:"09.02.26", 
    msg:"avx2 dot product working. 4.10x over scalar, 13.4 gb/s, passes the 1e-3 bar against a float64 reference. first run showed 33.8x —> ceiling is 8x, so i knew it was wrong. i was timing my disk against my ram. got it fixed, so the correct timing shows", 
    x:"https://x.com/elijahadeb/status/2095220114333339918?s=20"},
+     
   {d:4, date:"09.03.26",
    msg:"implemented the threaded avx2 dot product and it returned exactly 0, so i spent most of this day debugging. std::async bound my args positionally to the wrong params —> every worker looped zero times, all twelve, no warning. fixed. now it runs but rel err is 3.157e-05 against 2.06e-09 single threaded, and my 1e-3 threshold called that a pass",
    x:"https://x.com/elijahadeb/status/2095552632798446070?s=20",
+   note:null},
+
+  {d:4, date:"09.04.26",
+   msg:"fix precision loss in threaded avx2: block accumulators every 100k, fold into double. now, relative errors reads 2.06e-09 against 2.06e-09 single threaded, which are identical. added scalar tail loop",
+   x:"https://x.com/elijahadeb/status/2095950364315156867?s=20",
    note:null},
 ];
 /* the feed self-manages: latest 14 lines by default, then one expander that
