@@ -333,6 +333,16 @@ var HASHES=[
    msg:"fix precision loss in threaded avx2: block accumulators every 100k, fold into double. now, relative errors reads 2.06e-09 against 2.06e-09 single threaded, which are identical. added scalar tail loop",
    x:"https://x.com/elijahadeb/status/2095950364315156867?s=20",
    note:null},
+
+  {d:6, date:"09.05.26",
+   msg:"benchmarked all three paths properly. median of 9 runs, not one. 6.5 / 16.5 / 22.9 gb/s against a 38.4 absolute limit, so the threaded one pulls 60% of what the memory bus can theoretically do.",
+   x:"",
+   note:null},
+
+  {d:7, date:"09.06.26",
+   msg:"rest day",
+   x:null,
+   note:null},
 ];
 /* the feed self-manages: latest 14 lines by default, then one expander that
    shows the whole year grouped by month. 365 entries stay one data block. */
