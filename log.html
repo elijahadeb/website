@@ -343,6 +343,11 @@ var HASHES=[
    msg:"rest day",
    x:null,
    note:null},
+
+  {d:8, date:"09.07.26",
+   msg:"had the first pass on attention is all you need. understood that rnns were dropped due to lack of parallelism, they process a sequence one step at a time so you can't spread it across the hardware. additionally, started the gguf header parser, and generated a 35gb file to benchmark cold disk reads, since anything smaller than ram just sits in page cache and measures memory instead",
+   x:"https://x.com/elijahadeb/status/2097009481607454779?s=20",
+   note:null},
 ];
 /* the feed self-manages: latest 14 lines by default, then one expander that
    shows the whole year grouped by month. 365 entries stay one data block. */
