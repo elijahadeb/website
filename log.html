@@ -404,6 +404,16 @@ var HASHES=[
    msg:"did not ship. wrote out the full mental model of the gguf parser. cursor invariant, u64 length prefixes, logical elements vs physical bytes, block-based quantization, container layout and cache locality. also learnt a lot about the difference between std::map and std::flat_map both give you ordered keys. both give you log N lookup. same big-O. but wildly works differently.",
    x:"https://x.com/elijahadeb/status/2101351807041540269?s=20",
    note:null},
+
+  {d:20, date:"09.19.26",
+   msg:"no code. grounded c++ foundations. tracked raw byte movement into memory, object vs address vs byte-level lens. reinterpret_cast hands read() a physical destination without mutating the base uint32_t. array decay on char[4]. quantization reality check: q4_K 256 logical elements do not equal 144 physical bytes. stopping syntax memorization to build a rebuildable mental model",
+   x:"https://x.com/elijahadeb/status/2101796387201380706?s=20",
+   note:null},
+
+  {d:21, date:"09.20.26",
+   msg:"rest",
+   x:null,
+   note:null},
 ];
 /* the feed self-manages: latest 14 lines by default, then one expander that
    shows the whole year grouped by month. 365 entries stay one data block. */
