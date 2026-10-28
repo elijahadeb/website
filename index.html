@@ -4,16 +4,17 @@
   hand-coded. 0 frameworks, 0 trackers.
 
   EDIT ME (search for these):
-    1. YOUR NAME      — hero + <title> + email line
-    2. FILL markers   — github / x / resume links, email, bench "full list"
-    3. SAMPLE ENTRIES — gate row on index · gates+hashes in log.html · pieces in writings.html
-    4. loggedDays     — paste day numbers from dead-silicon-console JSON export
-    5. fonts/         — included: JetBrains Mono, subset to used glyphs (108 kb),
-                        with its OFL license. system mono remains the fallback.
+    1. FILL markers   — github / x / resume links, email, bench "full list"
+    2. SAMPLE ENTRIES — gate row on index · gates+hashes in log.html · pieces in writings.html
+    3. loggedDays     — paste day numbers from dead-silicon-console JSON export
+    4. PAUSES         — calendar ranges the clock was stopped (see the ignition block)
+    5. fonts/         — JetBrains Mono, subset to used glyphs, with its OFL license.
+                        the subset is printable ascii + latin-1 + ← → ↓ ↗ − – —, and
+                        the hero's ascii sea (ocean.js) only draws from that set.
+                        system mono is the fallback.
     6. icons          — icon-machine / icon-rig / icon-keys .webp live next to
                         this file; swap or add as hardware joins (see SITE-BRIEF.md)
-    7. default theme  — change data-theme="dark" to "light" on <html> if you
-                        ever want the cream default. dark = banner/video continuity.
+    7. default theme  — light (cream) is the default; dark is opt-in via the toggle.
 
   brand constants ported from stylize.py:
     CREAM #E8E6DF · EMBER #CF6A2B · corner ticks · orb_stamp()
@@ -25,7 +26,6 @@
 <meta name="color-scheme" content="light dark">
 <title>elijah | dead-silicon</title>
 <meta name="description" content="A from-scratch LLM inference engine, and the reasoning-per-watt numbers for hardware people already own.">
-<!-- TODO: og:image → point at dead-silicon-banner.png once hosted -->
 <meta property="og:title" content="elijah | dead-silicon">
 <meta property="og:description" content="From-scratch inference. Reasoning per watt. Hardware people already own.">
 <meta name="twitter:card" content="summary_large_image">
@@ -101,7 +101,14 @@ header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;
 .mark{font-weight:800;text-decoration:none;letter-spacing:.06em}
 .mark:hover{color:var(--ember)}
 .hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+.hud nav{display:flex;gap:16px}
+.hud nav a{text-decoration:none;color:var(--dim)}
+.hud nav a:hover{color:var(--ember)}
 #clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+/* the colon ticks with the clock — the page is running, not printed */
+.tk{animation:tk 2s steps(1) infinite}
+@keyframes tk{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.tk{animation:none}}
 
 /* sections */
 section.sec{border-top:1px solid var(--line)}
@@ -116,12 +123,33 @@ figure.icon figcaption::before{content:"# ";color:var(--faint)}
 .links{margin-top:22px;font-size:.95rem;display:flex;flex-wrap:wrap;gap:12px 26px}
 .links a{text-decoration:none;border-bottom:1px solid var(--faint);padding:10px 2px 6px}
 .links a:hover{border-color:var(--ember)}
-.arw,.arw-d,.arw-r,.arw-l{display:inline-block;transition:transform .14s steps(2,end)}
+.arw,.arw-d,.arw-r,.arw-l,.arw-u{display:inline-block;transition:transform .14s steps(2,end)}
+.arw-u{transform:rotate(180deg)}
 a:hover .arw{transform:rotate(45deg)}
 a:hover .arw-d{transform:translateY(4px)}
 a:hover .arw-r{transform:translateX(6px)}
 a:hover .arw-l{transform:translateX(-6px)}
-@media (prefers-reduced-motion:reduce){.arw,.arw-d,.arw-r,.arw-l{transition:none}}
+a:hover .arw-u{transform:rotate(180deg) translateY(4px)}
+@media (prefers-reduced-motion:reduce){.arw,.arw-d,.arw-r,.arw-l,.arw-u{transition:none}}
+
+/* the hero sea — ocean.js draws an ascii ocean behind the intro (a port of
+   stackedlol/ascii-sharks). click anywhere that isn't a link and food drops in
+   at that spot. the veil is a soft fog behind the copy, so text beats fish. */
+.hero{position:relative;overflow:hidden;isolation:isolate;cursor:crosshair;
+  display:flex;align-items:center;min-height:clamp(560px,84vh,920px);
+  --hp:clamp(48px,8vh,96px)}
+.hero h1,.hero p{cursor:auto}
+#ocean{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;
+  font-family:var(--mono)}
+.hero .wrap{position:relative;z-index:1;width:100%;padding-block:var(--hp)}
+.hero figure.icon{top:calc(var(--hp) - 2px)}
+.veil{position:absolute;z-index:-1;left:184px;right:-28px;top:calc(var(--hp) - 26px);
+  bottom:calc(var(--hp) - 26px);background:var(--bg);opacity:.86;filter:blur(20px);
+  border-radius:48px;pointer-events:none}
+.hero h1,.hero p,.hero .links a,.hero figcaption{text-shadow:0 0 2px var(--bg),0 0 10px var(--bg)}
+.ohint{position:absolute;z-index:1;right:20px;bottom:12px;font-size:.7rem;
+  color:var(--mute);letter-spacing:.03em;pointer-events:none}
+.ohint::before{content:"# ";color:var(--faint)}
 
 /* wordmark band */
 .band{border-top:1px solid var(--line);position:relative}
@@ -141,10 +169,16 @@ a:hover .arw-l{transform:translateX(-6px)}
 @keyframes blink{50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.cur{animation:none}}
 .strip{display:flex;flex-wrap:wrap;gap:3px;margin-top:14px}
-.cell{width:5px;height:10px;border:1px solid var(--faint)}
+.cell{display:block;width:5px;height:10px;border:1px solid var(--faint)}
 .cell.past{background:var(--faint);border-color:transparent}
 .cell.lit{background:var(--ink);border-color:transparent}
-.cell.today{background:var(--ember);border-color:transparent}
+a.cell.lit:hover{background:var(--ember)}
+/* today breathes — the site-wide grammar: a pulse means unfinished */
+.cell.today{background:var(--ember);border-color:transparent;animation:breathe 1.5s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.3}}
+/* a splice where the clock was stopped. hover it for the dates */
+.cell.pz{width:1px;height:16px;margin:-3px 2px;border:0;background:var(--ember)}
+@media (prefers-reduced-motion:reduce){.cell.today{animation:none}}
 
 /* row lists (log + bench) */
 .rows{margin-top:14px;border-bottom:1px dashed var(--line)}
@@ -162,8 +196,6 @@ a:hover .arw-l{transform:translateX(-6px)}
 .topics a,.topics span{text-decoration:none;border:1px solid var(--faint);padding:9px 14px;color:var(--dim)}
 .topics span{color:var(--mute);cursor:default}
 .topics a:hover{border-color:var(--ember);color:var(--ember)}
-
-/* footer */
 
 /* --- writing in progress: a row that is claimed but unwritten. not a link,
    so it cannot be a dead click; the pulse says "being written", not "missing". --- */
@@ -214,13 +246,27 @@ a:hover .arw-l{transform:translateX(-6px)}
 @media (prefers-reduced-motion:reduce){
   .verb i{animation:none!important;width:0;border-color:transparent}
   .verb i:first-child{width:auto;border-color:var(--ember)}}
+
+/* footer — one sign-off, same on every page: who, the laws, where to go next,
+   and what the page actually weighs (measured in the visitor's browser). */
 footer{border-top:1px solid var(--line)}
-footer .wrap{display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:20px;padding-block:44px}
-.laws{margin:0;position:relative;padding-left:24px;font-size:.9rem;color:var(--dim)}
-.laws b{color:var(--ink)}
-canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
-.meta{margin-top:22px;font-size:.78rem;color:var(--mute);line-height:2}
-#orb{width:72px;height:72px;justify-self:end;align-self:start}
+footer .wrap{padding-block:46px 40px}
+.sig{display:flex;align-items:center;gap:18px}
+#orb{width:56px;height:56px;flex-shrink:0}
+.sig-t{min-width:0;flex:1}
+.sig-name{font-weight:800;letter-spacing:.06em;text-decoration:none}
+.sig-name:hover{color:var(--ember)}
+.sig-line{margin-top:2px;font-size:.8rem;color:var(--mute)}
+.laws{list-style:none;margin:30px 0 0;padding:0;font-size:.88rem;color:var(--dim);
+  border-bottom:1px dashed var(--line)}
+.laws li{display:grid;grid-template-columns:8ch minmax(0,1fr);padding:11px 0;
+  border-top:1px dashed var(--line)}
+.laws b{color:var(--ember);font-weight:800;font-size:.78rem;letter-spacing:.06em}
+.fnav{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 22px;margin-top:22px;font-size:.85rem}
+.fnav a{text-decoration:none;color:var(--dim);padding:6px 0}
+.fnav a:hover{color:var(--ember)}
+.fnav .totop{margin-left:auto}
+.colo{margin-top:10px;font-size:.72rem;color:var(--mute);line-height:1.9}
 
 /* mobile */
 @media (max-width:640px){
@@ -230,8 +276,12 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
   figure.icon img{max-width:118px;max-height:140px}
   .row{flex-wrap:wrap;gap:2px 18px}
   .tick{display:none}
-  footer .wrap{grid-template-columns:1fr}
-  #orb{justify-self:start;margin-top:6px}
+  .hud nav{display:none}
+  .hero{--hp:46px;min-height:0}
+  .veil{left:-14px;right:-14px;top:calc(var(--hp) - 18px);bottom:calc(var(--hp) - 18px);opacity:.55}
+  .ohint{right:18px}
+  .laws li{grid-template-columns:1fr}
+  .fnav .totop{margin-left:0}
 }
 </style>
 </head>
@@ -246,6 +296,7 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
   <div class="bar">
     <a class="mark" href="#top">d-s.</a>
     <div class="hud">
+      <nav aria-label="site"><a href="log.html">log</a><a href="writings.html">writings</a><a href="garden.html">garden</a></nav>
       <span id="clock">lagos --:--</span>
       <button id="theme" type="button" aria-pressed="true">dark</button>
     </div>
@@ -254,9 +305,11 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
 
 <main>
 
-  <!-- 01 · hey -->
-  <section class="sec" id="hey">
+  <!-- 01 · hey — over an ascii sea (ocean.js). click the water to feed it -->
+  <section class="sec hero" id="hey">
+    <canvas id="ocean" aria-hidden="true"></canvas>
     <div class="wrap has-icon">
+      <div class="veil" aria-hidden="true"></div>
       <figure class="icon">
         <img src="icon-machine.webp" width="389" height="420" decoding="async"
           alt="the machine: a gtx-1050-era dell laptop, lid open">
@@ -264,7 +317,7 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
       </figure>
       <h1>hey! i'm <span class="name">elijah</span>.</h1>
       <p>a systems engineer who is currently based in lagos. for the next year I'll be building
-        <a href="#bench">dead-silicon</a>, a from-scratch llm inference engine, all in pure C++, designed for hardware people already own.
+        <a href="#bench">dead-silicon</a>, a from-scratch llm inference engine, all in pure C++, designed for hardware people already own.</p>
       <p>will be using no clusters, no frameworks. just my gtx 1050 era laptop, a raspberry pi 5, and a wall meter to <a href="#bench">quantify</a> exactly what a joule of electricity buys in reasoning.</p>
       <div class="links">
         <a href="https://github.com/elijahadeb" target="_blank" rel="noopener">github <span class="arw">↗</span></a><!-- FILL -->
@@ -274,6 +327,7 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
         <a href="#hi">email <span class="arw-d">↓</span></a>
       </div>
     </div>
+    <span class="ohint" id="ohint" aria-hidden="true">click anywhere to feed the fish</span>
   </section>
 
   <!-- wordmark band: the x-banner, alive -->
@@ -295,7 +349,7 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
         <p>for each gate there is one heavy entry, while the daily pulse in the contribution graph lives as hashes in the full log.</p>
         <p>every number i ship includes the exact command that made it.</p>
       <div class="ign">
-        <div id="ignlabel"><b><span class="n">year one</span></b><small>08.01.26 → 07.31.27</small></div>
+        <div id="ignlabel"><b><span class="n">year one</span></b><small>of 365 · year one</small></div>
         <div class="strip" id="strip" aria-hidden="true"></div>
       </div>
       <div class="rows">
@@ -357,7 +411,7 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
         manuals, and the machine itself — mapped by concept, corrected in place.
         the log is a record; the garden is a state.</p>
       <div class="topics">
-        <!-- each plate deep-links into the concept graph and opens that node's drawer -->
+        <!-- each plate deep-links into the garden and opens that plant's drawer -->
         <a href="garden.html#mmap">mmap &amp; the page cache</a>
         <a href="garden.html#avx2">avx2 intrinsics</a>
         <a href="garden.html#perf">perf(1) &amp; rapl</a>
@@ -385,27 +439,36 @@ canvas.rule{position:absolute;left:0;top:0;width:10px;height:100%}
 
 <footer>
   <div class="wrap">
-    <div>
-      <blockquote class="laws">
-        <canvas class="rule" aria-hidden="true"></canvas>
-        <b>law 1</b>: a claim a stranger cannot reproduce in 30 minutes doesn't exist.<br>
-        <b>law 2</b>: version numbers are earned in code.
-      </blockquote>
-      <div class="meta">0 frameworks, 0 trackers |
-        9.6 kb of code, 98 kb of type, 68 kb of photographs | every image is the actual hardware.</div>
+    <div class="sig">
+      <canvas id="orb" aria-hidden="true"></canvas>
+      <div class="sig-t">
+        <a class="sig-name" href="#top">dead-silicon</a><span class="cur" aria-hidden="true"></span>
+        <div class="sig-line">a from-scratch llm inference engine, built in public from lagos.</div>
+      </div>
     </div>
-    <canvas id="orb" aria-hidden="true"></canvas>
+    <ol class="laws">
+      <li><b>law 1</b><span>a claim a stranger cannot reproduce in 30 minutes doesn't exist.</span></li>
+      <li><b>law 2</b><span>version numbers are earned in code.</span></li>
+    </ol>
+    <nav class="fnav" aria-label="footer">
+      <a href="log.html">log</a><a href="writings.html">writings</a><a href="garden.html">garden</a><a href="#hi">say hi</a>
+      <a href="https://github.com/elijahadeb" target="_blank" rel="noopener">github <span class="arw">↗</span></a>
+      <a href="https://x.com/elijahadeb" target="_blank" rel="noopener">x <span class="arw">↗</span></a>
+      <a class="totop" href="#top">top <span class="arw-u">↓</span></a>
+    </nav>
+    <div class="colo">hand-coded · 0 frameworks · 0 trackers · every image is the actual hardware<span id="weight"></span></div>
   </div>
 </footer>
 
+<script src="ocean.js"></script>
 <script>
 (function(){
 "use strict";
 var doc=document, root=doc.documentElement;
 var reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var coarse=window.matchMedia("(hover: none)").matches;
 
 function q(s){return doc.querySelector(s)}
-function qa(s){return Array.prototype.slice.call(doc.querySelectorAll(s))}
 function cvar(n){return getComputedStyle(root).getPropertyValue(n).trim()}
 function mulberry32(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;
   var r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;
@@ -423,41 +486,82 @@ themeBtn.addEventListener("click",function(){
   themeBtn.setAttribute("aria-pressed",light?"true":"false");
   q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
   try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){}
-  bandColors();drawOrb();drawRules();if(reduced)bandStatic();
+  bandColors();drawOrb();if(reduced)bandStatic();
+  if(sea)sea.setTheme(light?"light":"dark");
 });
 
 /* lagos clock — honest wherever it is viewed */
 var clock=q("#clock");
 var fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",hour12:false});
-function tickClock(){clock.textContent="lagos "+fmt.format(new Date())}
+function tickClock(){var p=fmt.format(new Date()).split(":");
+  clock.innerHTML="lagos "+p[0]+'<span class="tk">:</span>'+p[1]}
 tickClock();setInterval(tickClock,30000);
 
-/* ignition — year one: 2026-08-29 → 2027-08-28 (utc+1).
-   the label is a live countdown; at lagos midnight aug 29 it flips to DAY 001
-   by itself. paste logged day numbers (1-based) from the console json export. */
-var START=Date.UTC(2026,7,30,23,0,0), TOTAL=365, DAYMS=86400000;
-var loggedDays=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39];
-var ignlabel=q("#ignlabel"), stripEl=q("#strip"), ignMode="", ignB=null, lastIdx=null;
+/* ignition — year one, counted in working days.
+   day 001 is 08.31.26, lagos. PAUSES are calendar ranges (lagos dates, both ends
+   inclusive) when the clock was stopped: those days are not counted, and the year
+   runs that much longer, so "day 022" always means the 22nd day of actual work.
+   the strip draws a thin ember splice where each pause sits — hover it for dates.
+   paste logged day numbers (1-based) from the console json export. */
+var DAYMS=86400000, TOTAL=365;
+function lagosDay(s){var p=s.split(".");return Date.UTC(2000+(+p[2]),p[0]-1,+p[1])-3600000}
+var START=lagosDay("08.31.26");
+var PAUSES=[["09.21.26","10.27.26"]];
+var loggedDays=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
+var PZ=PAUSES.map(function(p){return [Math.round((lagosDay(p[0])-START)/DAYMS),
+  Math.round((lagosDay(p[1])-START)/DAYMS)]});
+function workOf(c){var off=0;          /* calendar day index -> working day index, -1 inside a pause */
+  for(var i=0;i<PZ.length;i++){if(c>PZ[i][1])off+=PZ[i][1]-PZ[i][0]+1;else if(c>=PZ[i][0])return -1}
+  return c-off}
+function calOf(w){var c=w;             /* working day index -> calendar day index */
+  for(var i=0;i<PZ.length;i++){if(c>=PZ[i][0])c+=PZ[i][1]-PZ[i][0]+1}
+  return c}
+var dfmt=new Intl.DateTimeFormat("en-US",{timeZone:"Africa/Lagos",month:"2-digit",day:"2-digit",year:"2-digit"});
+function dstr(c){return dfmt.format(new Date(START+c*DAYMS+43200000)).replace(/\//g,".")}
+function pad3(n){return ("00"+n).slice(-3)}
 function pad2(n){return ("0"+n).slice(-2)}
+var ignlabel=q("#ignlabel"), stripEl=q("#strip"), ignMode="", ignB=null, lastIdx=null;
 function buildStrip(dayIdx){
   stripEl.innerHTML="";
-  var frag=doc.createDocumentFragment();
+  var frag=doc.createDocumentFragment(), splice={};
+  PZ.forEach(function(p,k){var w=workOf(p[0]-1);if(w>=0)splice[w]=PAUSES[k]});
   for(var i=0;i<TOTAL;i++){
-    var c=doc.createElement("span");c.className="cell";
-    if(i<dayIdx)c.className+=loggedDays.indexOf(i+1)>=0?" lit":" past";
-    else if(i===dayIdx&&dayIdx>=0&&dayIdx<TOTAL)c.className+=" today";
+    var c, lab="day "+pad3(i+1)+" · "+dstr(calOf(i));
+    if(i<dayIdx&&loggedDays.indexOf(i+1)>=0){
+      /* a lit day is a link to its own evidence */
+      c=doc.createElement("a");c.className="cell lit";c.href="log.html#d"+pad3(i+1);
+      c.tabIndex=-1;c.title=lab;
+    }else{
+      c=doc.createElement("span");c.className="cell";
+      if(i<dayIdx){c.className+=" past";c.title=lab+" · not logged"}
+      else if(i===dayIdx){c.className+=" today";c.title=lab+" · today"}
+    }
     frag.appendChild(c);
+    if(splice[i]&&i<dayIdx){
+      var p=splice[i], m=doc.createElement("span"), a=lagosDay(p[0]), b=lagosDay(p[1]);
+      m.className="cell pz";
+      m.title="clock paused "+p[0]+" → "+p[1]+" · "+(Math.round((b-a)/DAYMS)+1)+
+        " days not counted · year one now ends "+dstr(calOf(TOTAL-1));
+      frag.appendChild(m);
+    }
   }
   stripEl.appendChild(frag);
 }
 function ignite(){
-  var now=Date.now(), idx=Math.floor((now-START)/DAYMS);
-  var mode=now<START?"pre":(idx>=TOTAL?"done":"day");
+  var now=Date.now(), c=Math.floor((now-START)/DAYMS), idx=now<START?-2:workOf(c);
+  var mode=now<START?"pre":(idx===-1?"paused":(idx>=TOTAL?"done":"day"));
+  /* inside a pause the strip waits on the next working day */
+  var stripIdx=idx;
+  if(mode==="paused")for(var k=PZ.length-1;k>=0;k--)
+    if(c>=PZ[k][0]&&c<=PZ[k][1]){stripIdx=workOf(PZ[k][0]-1)+1;break}
   if(mode!==ignMode){
     ignMode=mode;
-    if(mode==="pre"){ignlabel.innerHTML='<b><span class="n"></span><span class="cur"></span></b><small>t-minus * ignition 08.29.26</small>'}
-    else if(mode==="day"){ignlabel.innerHTML='<b><span class="n"></span><span class="cur"></span></b><small>of 365 * year one</small>'}
-    else{ignlabel.innerHTML='<b><span class="n">365 / 365</span></b><small>year one complete</small>'}
+    var back="", lastZ=PZ[PZ.length-1];
+    if(lastZ&&c>lastZ[1])back=" · resumed "+dstr(lastZ[1]+1);
+    if(mode==="pre"){ignlabel.innerHTML='<b><span class="n"></span><span class="cur"></span></b><small>t-minus · ignition '+dstr(0)+'</small>'}
+    else if(mode==="day"){ignlabel.innerHTML='<b><span class="n"></span><span class="cur"></span></b><small>of 365 · year one'+back+'</small>'}
+    else if(mode==="paused"){ignlabel.innerHTML='<b><span class="n">paused</span><span class="cur"></span></b><small>day '+pad3(stripIdx+1)+' starts when the work does</small>'}
+    else{ignlabel.innerHTML='<b><span class="n">365 / 365</span></b><small>year one complete · '+dstr(0)+' → '+dstr(calOf(TOTAL-1))+'</small>'}
     ignB=ignlabel.querySelector(".n");
   }
   if(mode==="pre"){
@@ -465,11 +569,32 @@ function ignite(){
     ignB.textContent=d+"d "+pad2(Math.floor(rem/3600000))+":"+
       pad2(Math.floor(rem%3600000/60000))+":"+pad2(Math.floor(rem%60000/1000));
   }else if(mode==="day"){
-    ignB.textContent="day "+("00"+(idx+1)).slice(-3);
+    ignB.textContent="day "+pad3(idx+1);
   }
-  if(idx!==lastIdx){lastIdx=idx;buildStrip(idx)}
+  if(stripIdx!==lastIdx){lastIdx=stripIdx;buildStrip(stripIdx)}
 }
 ignite();setInterval(ignite,1000);
+
+/* the hero sea — ocean.js, a port of stackedlol/ascii-sharks. three sharks in
+   the water; the keep-clear zone is the intro copy, so they cruise the margins
+   and only cross the text when they smell food or chase prey. on a phone the
+   copy fills the hero, so the zone is dropped and the veil keeps text readable. */
+var sea=null, oceanEl=q("#ocean");
+if(oceanEl&&window.DSOcean){
+  var veil=q("#hey .veil"), narrow=window.innerWidth<700, oh=q("#ohint");
+  sea=new window.DSOcean(oceanEl,{
+    theme:root.getAttribute("data-theme")==="dark"?"dark":"light",
+    weight:800,
+    sharks:narrow?[{kind:"classic",size:1},{kind:"hammerhead",size:0.82}]
+      :[{kind:"hammerhead",size:1},{kind:"tiger",size:0.84},{kind:"classic",size:0.72}],
+    clearZone:function(){
+      if(window.innerWidth<700)return null;
+      var c=oceanEl.getBoundingClientRect(), r=veil.getBoundingClientRect();
+      return {x:r.left-c.left+r.width/2,y:r.top-c.top+r.height/2,rx:r.width*0.62,ry:r.height*0.66};
+    }
+  });
+  if(oh)oh.textContent=reduced?"":(coarse?"tap":"click")+" anywhere to feed the fish";
+}
 
 /* stipple sampler — a dot only exists where the source says so */
 function sample(w,h,step,draw,seed,base,emberP){
@@ -499,25 +624,6 @@ function paint(ctx,dots,ink,ember,t,px,py){
       ctx.beginPath();ctx.arc(x,y,d.r,0,6.283);ctx.fill();
     }
   }
-}
-
-/* stippled rules — a line made of points (inverse of the orb: ember with a
-   stray cream dot, where the orb is cream with a stray ember) */
-function drawRules(){
-  var ink=cvar("--ink"),ember=cvar("--ember");
-  qa("canvas.rule").forEach(function(cv,ci){
-    var hostH=cv.parentElement.offsetHeight;
-    var dpr=Math.min(2,window.devicePixelRatio||1);
-    cv.width=10*dpr;cv.height=hostH*dpr;
-    var c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);
-    var rnd=mulberry32(29+ci), y=3;
-    while(y<hostH-2){
-      var r=0.8+rnd()*1.25, x=4+(rnd()*2-1)*2.3;
-      c.fillStyle=rnd()<0.12?ink:ember;
-      c.beginPath();c.arc(x,y,r,0,6.283);c.fill();
-      y+=4+rnd()*3.6;
-    }
-  });
 }
 
 /* wordmark band */
@@ -568,33 +674,61 @@ if(!reduced){
 var rsz=null;
 window.addEventListener("resize",function(){clearTimeout(rsz);rsz=setTimeout(function(){
   if(Math.round(band.getBoundingClientRect().width)!==bw)buildBand();
-  drawRules();
 },180)});
 
-/* orb — orb_stamp() from stylize.py, same recipe */
+/* orb — orb_stamp() from stylize.py, same recipe and seed as og.png, so at rest it
+   is the banner's orb exactly. it turns now: each ring drifts at its own rate,
+   inner ones faster, while the light stays put — dots swell as they pass through
+   it. hover the sign-off and it spins up. still under reduced motion. */
+var orbEl=q("#orb"), orbPts=null, orbT=0, orbW=1, orbGoal=1, orbRun=false, orbLast=0;
 function drawOrb(){
-  var el=q("#orb");if(!el)return;
-  var dpr=Math.min(2,window.devicePixelRatio||1),S=72;
-  el.width=S*dpr;el.height=S*dpr;
-  var c=el.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,S,S);
-  var ink=cvar("--ink"),ember=cvar("--ember"),k=S/62,rnd=mulberry32(7);
-  var pts=[[0,0,2.2]],rings=[[8,6],[14,10],[20,14],[25,16]];
-  rings.forEach(function(rc){
-    var R=rc[0],cnt=rc[1];
-    for(var j=0;j<cnt;j++){
-      var a=6.28318*j/cnt+R*0.35,dx=R*Math.cos(a),dy=R*Math.sin(a);
-      var shade=Math.max(0,(dx+dy)/(1.414*R));
-      pts.push([dx,dy,0.9+1.4*shade+(rnd()*0.3-0.15)]);
-    }
-  });
-  pts.forEach(function(p,i){
+  if(!orbEl)return;
+  if(!orbPts){var rnd=mulberry32(7);orbPts=[{R:0,a:0,j:0,w:0}];
+    [[8,6],[14,10],[20,14],[25,16]].forEach(function(rc){
+      for(var j=0;j<rc[1];j++)orbPts.push({R:rc[0],a:6.28318*j/rc[1]+rc[0]*0.35,
+        j:rnd()*0.3-0.15,w:0.5/Math.sqrt(rc[0])});});}
+  var dpr=Math.min(2,window.devicePixelRatio||1),S=56;
+  if(orbEl.width!==S*dpr){orbEl.width=S*dpr;orbEl.height=S*dpr}
+  var c=orbEl.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,S,S);
+  var ink=cvar("--ink"),ember=cvar("--ember"),k=S/62;
+  for(var i=0;i<orbPts.length;i++){var p=orbPts[i],a=p.a+orbT*p.w,
+    dx=p.R*Math.cos(a),dy=p.R*Math.sin(a),
+    r=p.R?0.9+1.4*Math.max(0,(dx+dy)/(1.414*p.R))+p.j:2.2;
     c.fillStyle=(i%9===4)?ember:ink;
-    c.beginPath();c.arc(S/2+p[0]*k,S/2+p[1]*k,Math.max(1.1,p[2]*k),0,6.283);c.fill();
-  });
+    c.beginPath();c.arc(S/2+dx*k,S/2+dy*k,Math.max(1.1,r*k),0,6.283);c.fill();}
+}
+function orbFrame(now){
+  if(!orbRun)return;
+  var dt=Math.min(0.1,(now-orbLast)/1000);orbLast=now;
+  orbW+=(orbGoal-orbW)*Math.min(1,dt*3);orbT+=dt*orbW;drawOrb();
+  requestAnimationFrame(orbFrame);
+}
+if(orbEl&&!reduced){
+  var orbVis=false, sig=q(".sig");
+  var orbGo=function(){var on=orbVis&&!doc.hidden;
+    if(on&&!orbRun){orbRun=true;orbLast=performance.now();requestAnimationFrame(orbFrame)}
+    else if(!on)orbRun=false};
+  new IntersectionObserver(function(en){orbVis=en[0].isIntersecting;orbGo()}).observe(orbEl);
+  doc.addEventListener("visibilitychange",orbGo);
+  sig.addEventListener("pointerenter",function(){orbGoal=7});
+  sig.addEventListener("pointerleave",function(){orbGoal=1});
 }
 
+/* page weight — measured, not claimed: the browser's own resource timing, summed.
+   it ticks up as lazy images arrive. anyone can check it in devtools. */
+var wEl=q("#weight");
+function weigh(){
+  if(!wEl||!window.performance||!performance.getEntriesByType)return;
+  var t=0;
+  performance.getEntriesByType("navigation").concat(performance.getEntriesByType("resource"))
+    .forEach(function(e){t+=e.encodedBodySize||e.transferSize||0});
+  if(t>0)wEl.textContent=" · this page weighs "+Math.round(t/1024)+" kb, measured by your browser just now";
+}
+window.addEventListener("load",weigh);
+if(window.PerformanceObserver){try{new PerformanceObserver(weigh).observe({type:"resource",buffered:true})}catch(e){}}
+
 /* init now with fallback font; rebuild once real font lands */
-function init(){buildBand();drawOrb();drawRules()}
+function init(){buildBand();drawOrb()}
 init();
 if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(init).catch(function(){})}
 })();
