@@ -82,10 +82,10 @@ button:hover{color:var(--ember)}
 header.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
 header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;display:flex;
   align-items:baseline;justify-content:space-between;gap:12px}
-.crumb{font-size:.85rem}
+.crumb{font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .crumb a{text-decoration:none}.crumb .sep{color:var(--mute);padding:0 6px}
 .crumb .here{color:var(--dim)}
-.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim);flex-shrink:0}
 #clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
 main{padding:56px 0 30px}
 .col{max-width:var(--w);margin-inline:auto;padding:0 20px}
@@ -181,7 +181,13 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
 .tk{animation:tk 2s steps(1) infinite}
 @keyframes tk{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.cur,.tk{animation:none}.fnav .arw,.fnav .arw-u{transition:none}}
-@media (max-width:640px){.tick{display:none}
+@media (max-width:420px){#clock{display:none}}
+@media (max-width:640px){.tick{display:none}.colo{font-size:12px}
+  .graph{display:flex;flex-direction:column}.graph .hint{order:1}#kg{order:2}
+  .stat{order:3;position:static;display:block;padding:8px 18px 2px;text-align:right}
+  .graph.full .hint,.graph.full .stat{display:none}
+  .hint,.stat,.gx,.d-h{font-size:12px}
+  .crumb a{display:inline-block;padding:12px 0;margin:-12px 0}
   .graph .hint{position:static;display:block;padding:10px 84px 8px 18px}
   .drawer{top:auto;left:0;right:0;width:100%;max-height:72vh;border-left:0;
     border-top:1px solid var(--line);transform:translateY(103%)}
@@ -496,7 +502,7 @@ function step(dt){
   T+=dt;
   /* the growing edge: dead soil next to the fungus comes alive, faster toward roots
      and water, slower across ground it has already given up */
-  var all=reached>=NODES.length+drops.length,gr=all?0.008:0.05,nf=0;forageI=all?0.6:IF;
+  var all=reached>=NODES.length+drops.length,gr=all?0.008*(SP/18)*(SP/18):0.05,nf=0;forageI=all?0.6:IF;
   for(k=0;k<NN;k++){
     if(ALIVE[k]){SINK[k]=0;if(T-BORN[k]<2.4){SINK[k]=1;nf++}continue}
     var nb=0;for(t=ADJ0[k];t<ADJ0[k+1];t++)if(ALIVE[ADJN[t]]){nb=1;break}
@@ -683,22 +689,25 @@ function feeds(n){
   COMM.forEach(function(cm){if(cm.a!==n&&cm.b!==n)return;
     cm.path.forEach(function(e){if(!seen[e]){seen[e]=1;on.push(e)}})});
   return on}
-var PF=0;
+/* sky, soil, the stains and the roots change rarely, so they are composed into one base
+   layer and copied once a frame */
+var PF=0,baseC=doc.createElement("canvas"),baseDirty=true;
 function paint(){
   if(!ED)return;
   PF++;
-  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(bgC,0,0);
-  if(rootsDirty){drawRoots();rootsDirty=false}
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  if(PF%30===1||!run)trails();
-  ctx.imageSmoothingEnabled=true;ctx.drawImage(trail,0,0,TW,TH,0,0,TW*4,TH*4);
+  if(rootsDirty){drawRoots();rootsDirty=false;baseDirty=true}
+  if(PF%30===1||!run){trails();baseDirty=true}
+  if(baseDirty){baseDirty=false;
+    if(baseC.width!==cv.width||baseC.height!==cv.height){baseC.width=cv.width;baseC.height=cv.height}
+    var bc=baseC.getContext("2d");bc.setTransform(1,0,0,1,0,0);bc.drawImage(bgC,0,0);
+    bc.imageSmoothingEnabled=true;bc.drawImage(trail,0,0,TW,TH,0,0,TW*4*DPR,TH*4*DPR);bc.drawImage(rootC,0,0)}
+  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(baseC,0,0);ctx.setTransform(DPR,0,0,DPR,0,0);
   var i;
   for(i=0;i<drops.length;i++){var w=drops[i],age=T-w.t0,rad=Math.min(26,6+age*14),al=Math.min(1,w.life/6);
     var wg=ctx.createRadialGradient(w.x,w.y,0,w.x,w.y,rad);wg.addColorStop(0,"rgba(20,14,8,"+(0.42*al)+")");
     wg.addColorStop(0.7,"rgba(20,14,8,"+(0.22*al)+")");wg.addColorStop(1,"rgba(20,14,8,0)");
     ctx.fillStyle=wg;ctx.beginPath();ctx.arc(w.x,w.y,rad,0,6.283);ctx.fill();
     ctx.fillStyle="rgba(190,220,255,"+(0.45*al)+")";ctx.beginPath();ctx.arc(w.x-rad*0.25,w.y-rad*0.3,1.6,0,6.283);ctx.fill()}
-  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(rootC,0,0);ctx.setTransform(DPR,0,0,DPR,0,0);
   threads();
   var focus=dragN||hov||sel;
   if(focus){var fe=feeds(focus);if(fe.length){ctx.lineWidth=2.6;ctx.strokeStyle=PAL.ember;ctx.globalAlpha=0.85;ctx.beginPath();
@@ -707,17 +716,22 @@ function paint(){
   for(i=0;i<grains.length;i++){var g=grains[i],e2=g.e,s=g.s,u=1-s,
     x=u*u*NX[EA[e2]]+2*u*s*CX[e2]+s*s*NX[EB[e2]],y=u*u*NY[EA[e2]]+2*u*s*CY[e2]+s*s*NY[EB[e2]];
     ctx.fillRect(x-1,y-1,2,2)}
-  /* plants, then their labels; a label that would run into its neighbour steps up a line */
+  /* plants, then their labels. on a wide panel a label that would run into its neighbour
+     steps up a line; on a narrow one they alternate between two lines, the upper ones
+     with a short leader down to their plant */
   var linked={};if(focus)L.forEach(function(l){if(l[0]===focus)linked[l[1].id]=1;if(l[1]===focus)linked[l[0].id]=1});
   NODES.forEach(function(nd){drawPlant(ctx,nd.px,nd.py,nd.status,nd.hh,nd===focus,false,1)});
   ctx.font="11px "+FONT;ctx.textBaseline="middle";ctx.textAlign="left";
   var boxes=[];
-  NODES.slice().sort(function(a,b){return a.px-b.px}).forEach(function(nd){
+  NODES.slice().sort(function(a,b){return a.px-b.px}).forEach(function(nd,ix){
     var act=nd===focus,lab=act?nd.label:nd.label.split(/ & |, /)[0];
     if(!act&&W<700)lab=lab.split(" ")[0];
     var tw=ctx.measureText(lab).width;
-    var lx=clampN(nd.px-tw/2,6,W-6-tw),ly=nd.py-stalk(nd)-(nd.status==="seed"?20:16);
-    for(var tries=0;tries<4;tries++){var hit=false;
+    var lx=clampN(nd.px-tw/2,6,W-6-tw),top=nd.py-stalk(nd)-(nd.status==="seed"?20:16),ly=top;
+    if(W<700){ly=top-(ix&1)*17;
+      if(ix&1){ctx.strokeStyle=PAL.dim;ctx.globalAlpha=0.4;ctx.lineWidth=1;ctx.beginPath();
+        ctx.moveTo(nd.px+0.5,ly+9);ctx.lineTo(nd.px+0.5,top+6);ctx.stroke();ctx.globalAlpha=1}}
+    else for(var tries=0;tries<4;tries++){var hit=false;
       for(var j=0;j<boxes.length;j++){var bx=boxes[j];if(lx<bx.x+bx.w+8&&lx+tw+8>bx.x&&Math.abs(ly-bx.y)<16){hit=true;break}}
       if(!hit)break;ly-=17}
     boxes.push({x:lx,y:ly,w:tw});
@@ -943,7 +957,7 @@ window.addEventListener("resize",function(){clearTimeout(rsz);rsz=setTimeout(fun
 settle();init();if(reduced)grow();paint();netStat();setInterval(netStat,5000);
 var hintEl=q(".hint");
 if(hintEl&&window.matchMedia("(hover: none)").matches)
-  hintEl.textContent="# each note is a plant; the threads under the soil are its links · tap one to read it · tap the soil to water it";
+  hintEl.textContent="# plants are notes, threads are links · tap a plant to read it · tap the soil to water it";
 buildRows();drawOrb();drawLegend();fromHash();
 if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(function(){FONT=cvar("--mono");render();drawOrb();drawLegend()}).catch(function(){})}
 })();
