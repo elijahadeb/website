@@ -13,7 +13,7 @@
                         the hero's lamp (lamp.js) only draws from that set.
                         system mono is the fallback.
     6. icons          — icon-machine / icon-rig / icon-keys .webp live next to
-                        this file; swap or add as hardware joins (see SITE-BRIEF.md)
+                        this file; swap or add as hardware joins
     7. default theme  — light (cream) is the default; dark is opt-in via the toggle.
 
   brand constants ported from stylize.py:
@@ -123,14 +123,11 @@ figure.icon figcaption::before{content:"# ";color:var(--faint)}
 .links{margin-top:22px;font-size:.95rem;display:flex;flex-wrap:wrap;gap:12px 26px}
 .links a{text-decoration:none;border-bottom:1px solid var(--faint);padding:10px 2px 6px}
 .links a:hover{border-color:var(--ember)}
-.arw,.arw-d,.arw-r,.arw-l,.arw-u{display:inline-block;transition:transform .14s steps(2,end)}
-.arw-u{transform:rotate(180deg)}
+.arw,.arw-d,.arw-r{display:inline-block;transition:transform .14s steps(2,end)}
 a:hover .arw{transform:rotate(45deg)}
 a:hover .arw-d{transform:translateY(4px)}
 a:hover .arw-r{transform:translateX(6px)}
-a:hover .arw-l{transform:translateX(-6px)}
-a:hover .arw-u{transform:rotate(180deg) translateY(4px)}
-@media (prefers-reduced-motion:reduce){.arw,.arw-d,.arw-r,.arw-l,.arw-u{transition:none}}
+@media (prefers-reduced-motion:reduce){.arw,.arw-d,.arw-r{transition:none}}
 
 /* the hero — lamp.js: a bare bulb hanging in front of the wall, and moths that fly
    the way real ones do. grab the bulb and drag it; click a moth to catch it. the
@@ -268,11 +265,7 @@ footer .wrap{padding-block:46px 40px}
 .laws li{display:grid;grid-template-columns:8ch minmax(0,1fr);padding:11px 0;
   border-top:1px dashed var(--line)}
 .laws b{color:var(--ember);font-weight:800;font-size:.78rem;letter-spacing:.06em}
-.fnav{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 22px;margin-top:22px;font-size:.85rem}
-.fnav a{text-decoration:none;color:var(--dim);padding:6px 0}
-.fnav a:hover{color:var(--ember)}
-.fnav .totop{margin-left:auto}
-.colo{margin-top:10px;font-size:.72rem;color:var(--mute);line-height:1.9}
+.colo{margin-top:22px;font-size:.72rem;color:var(--mute);line-height:1.9}
 
 /* mobile */
 @media (max-width:640px){
@@ -287,7 +280,6 @@ footer .wrap{padding-block:46px 40px}
   .veil{left:-14px;right:-14px;top:calc(var(--hp) - 18px);bottom:calc(var(--hp) - 18px);opacity:.55}
   .mhint{right:18px}
   .laws li{grid-template-columns:1fr}
-  .fnav .totop{margin-left:0}
 }
 </style>
 </head>
@@ -457,12 +449,6 @@ footer .wrap{padding-block:46px 40px}
       <li><b>law 1</b><span>a claim a stranger cannot reproduce in 30 minutes doesn't exist.</span></li>
       <li><b>law 2</b><span>version numbers are earned in code.</span></li>
     </ol>
-    <nav class="fnav" aria-label="footer">
-      <a href="log.html">log</a><a href="writings.html">writings</a><a href="garden.html">garden</a><a href="#hi">say hi</a>
-      <a href="https://github.com/elijahadeb" target="_blank" rel="noopener">github <span class="arw">↗</span></a>
-      <a href="https://x.com/elijahadeb" target="_blank" rel="noopener">x <span class="arw">↗</span></a>
-      <a class="totop" href="#top">top <span class="arw-u">↓</span></a>
-    </nav>
     <div class="colo">hand-coded · 0 frameworks · 0 trackers · every image is the actual hardware<span id="weight"></span></div>
   </div>
 </footer>
