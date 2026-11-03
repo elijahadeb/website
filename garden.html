@@ -5,17 +5,16 @@
   links are fungal threads joining their roots under the soil, grown with a flow model
   written from scratch (after tero et al.) — no d3, no libraries, no webgl. invariant:
   0 frameworks.
-  it lives below, right after DATA: every edge in LINKS is a flow the fungus has to
+  the notes and their links live in data.js: every edge is a flow the fungus has to
   carry, and the threads it keeps are those claims.
 
-  PLANT RITUAL (the day a note gets written):
-    1. copy _templates/garden-note.html -> garden-<id>.html (next to this file) and write it
-    2. in NODES below: set status:"growing", planted:"MM.DD.YY", page:"garden-<id>.html"
-    3. push. the network, the drawer, and the list rebuild themselves from NODES.
-  TEND RITUAL: edit the note, bump tended:"MM.DD.YY".
-    promote status to "evergreen" when it stops changing.
-  EDGES: add ["a","b"] to LINKS only when you can defend the relationship
-    in one sentence. an edge is a claim.
+  _tools/ds keeps them:
+    ds seed id "label" "what it covers"   a thing you keep circling
+    ds plant id                           the day it gets written: makes garden-id.html
+    ds tend id                            you corrected it in place
+    ds evergreen id                       it stopped changing
+    ds link a b                           only when you can defend the edge in one sentence
+  the network, the drawer, the list and the homepage rebuild themselves.
 -->
 <html lang="en" data-theme="light">
 <head>
@@ -235,14 +234,12 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
     <span><canvas class="lg" data-s="evergreen" aria-hidden="true"></canvas><span><b>evergreen</b> — finished, safe to build on</span></span>
   </div>
 
-  <p class="sub">six seeds and nothing planted. a seed is a thing i keep circling —
+  <p class="sub"><span id="gcount">six seeds and nothing planted.</span> a seed is a thing i keep circling —
     read about, half-understand, and cannot yet write down without hedging. it becomes
     a note the day the engine forces the lesson and i can defend it in three sentences.
     the breathing ones are the ones on my mind.</p>
   <div class="rows" id="grows"></div>
-  <noscript><p class="sub">the network needs javascript. the six seeded topics:
-    mmap &amp; the page cache · gguf, byte by byte · avx2 intrinsics ·
-    perf(1) &amp; rapl · 4-bit quantization · speculative decoding.</p></noscript>
+  <noscript><p class="sub">the garden is drawn with javascript.</p></noscript>
   </div>
 </main>
 
@@ -283,6 +280,7 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
   </div>
 </footer>
 
+<script src="data.js"></script>
 <script>
 (function(){
 "use strict";
@@ -295,24 +293,9 @@ function mulberry32(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;
   var r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;
   return ((r^(r>>>14))>>>0)/4294967296}}
 
-/* ---- DATA — the only part you hand-edit (see ritual in the header comment) ---- */
-var NODES=[
-{id:"mmap",label:"mmap & the page cache",status:"seed",planted:null,tended:null,page:null,
- scope:"how a multi-gb weight file streams through 8 gb of ram — page faults, readahead, madvise, and what the kernel is actually doing under the engine."},
-{id:"gguf",label:"gguf, byte by byte",status:"seed",planted:null,tended:null,page:null,
- scope:"the weight-file format read with a hex editor: header, metadata, tensor offsets, alignment — the map the engine walks at load time."},
-{id:"avx2",label:"avx2 intrinsics",status:"seed",planted:null,tended:null,page:null,
- scope:"the 8-wide float kernels the engine lives on — fma, aligned loads, horizontal sums, and where the cycles actually go."},
-{id:"perf",label:"perf(1) & rapl",status:"seed",planted:null,tended:null,page:null,
- scope:"reading the truth from the machine: cycles, cache misses, joules from the wall — the instruments behind every published number."},
-{id:"quant",label:"4-bit quantization",status:"seed",planted:null,tended:null,page:null,
- scope:"packing weights into 4 bits without lobotomizing the model — block scales, dequant kernels, and the accuracy bill."},
-{id:"spec",label:"speculative decoding",status:"seed",planted:null,tended:null,page:null,
- scope:"a small model drafts, the big one verifies — the accept-rate arithmetic that moves tokens-per-joule."}
-];
-var LINKS=[["mmap","gguf"],["gguf","quant"],["quant","spec"],
-           ["avx2","quant"],["avx2","perf"],["perf","spec"],["mmap","perf"]];
-/* ------------------------------------------------------------------------------ */
+/* ---- DATA — the notes and their links, from data.js ---- */
+var DS=window.DS||{garden:{notes:[],links:[]}};
+var NODES=DS.garden.notes, LINKS=DS.garden.links;
 
 var byId={};NODES.forEach(function(n){byId[n.id]=n});
 var L=LINKS.map(function(p){return [byId[p[0]],byId[p[1]]]});
@@ -959,6 +942,13 @@ var hintEl=q(".hint");
 if(hintEl&&window.matchMedia("(hover: none)").matches)
   hintEl.textContent="# plants are notes, threads are links · tap a plant to read it · tap the soil to water it";
 buildRows();drawOrb();drawLegend();fromHash();
+/* the count in the intro follows the data: "six seeds and nothing planted." */
+(function(){var W=["no","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];
+  function n(k){return W[k]||String(k)}
+  var c={seed:0,growing:0,evergreen:0};NODES.forEach(function(x){c[x.status]=(c[x.status]||0)+1});
+  var t=c.growing+c.evergreen?[c.seed?n(c.seed)+" seed"+(c.seed===1?"":"s"):"",c.growing?n(c.growing)+" growing":"",
+      c.evergreen?n(c.evergreen)+" evergreen":""].filter(Boolean).join(", ")+".":n(c.seed)+" seed"+(c.seed===1?"":"s")+" and nothing planted.";
+  q("#gcount").textContent=t})();
 if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(function(){FONT=cvar("--mono");render();drawOrb();drawLegend()}).catch(function(){})}
 })();
 </script>

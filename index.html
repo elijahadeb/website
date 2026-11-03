@@ -5,16 +5,15 @@
 
   EDIT ME (search for these):
     1. FILL markers   — github / x / resume links, email, bench "full list"
-    2. SAMPLE ENTRIES — gate row on index · gates+hashes in log.html · pieces in writings.html
-    3. loggedDays     — paste day numbers from dead-silicon-console JSON export
-    4. PAUSES         — calendar ranges the clock was stopped (see the ignition block)
-    5. fonts/         — JetBrains Mono, subset to used glyphs, with its OFL license.
+    2. data.js        — the days, pauses, gates, writings and garden notes. every page
+                        reads it; _tools/ds edits it for you (run `_tools/ds help`)
+    3. fonts/         — JetBrains Mono, subset to used glyphs, with its OFL license.
                         the subset is printable ascii + latin-1 + ← → ↓ ↗ − – —, and
                         the hero's lamp (lamp.js) only draws from that set.
                         system mono is the fallback.
-    6. icons          — icon-machine / icon-rig / icon-keys .webp live next to
+    4. icons          — icon-machine / icon-rig / icon-keys .webp live next to
                         this file; swap or add as hardware joins
-    7. default theme  — light (cream) is the default; dark is opt-in via the toggle.
+    5. default theme  — light (cream) is the default; dark is opt-in via the toggle.
 
   brand constants ported from stylize.py:
     CREAM #E8E6DF · EMBER #CF6A2B · corner ticks · orb_stamp()
@@ -365,18 +364,8 @@ footer .wrap{padding-block:46px 40px}
         <div id="ignlabel"><b><span class="n">year one</span></b><small>of 365 · year one</small></div>
         <div class="strip" id="strip" aria-hidden="true"></div>
       </div>
-      <div class="rows">
-        <!-- the newest gate lives here; essays & notes are on writings.html.
-             PENDING vs PUBLISHED — a pending item is a <div>, never an <a>, so it
-             cannot be a dead click. to publish one, swap the wrapper and the date:
-
-               FROM  <div class="row wip"> … <span class="rd"><span class="verb">…</span></span></div>
-               TO    <a class="row" href="gate-minus-1.html"> … <span class="rd">08.28.26</span></a>
-
-             i.e. div->a, add href, drop " wip" from the class, and replace the whole
-             <span class="verb">…</span> with the date. nothing else changes. -->
-        <div class="row wip"><span class="rl"><span class="rg">[gate]</span><span class="rt">gate −1: three dot products and a number</span></span><span class="rd"><span class="verb g" role="img" aria-label="in progress"><i>measuring</i><i>timing</i><i>re-running</i><i>verifying</i><i>writing up</i></span></span></div>
-      </div>
+      <!-- the newest gate, from data.js -->
+      <div class="rows" id="hgate"></div>
       <a class="more" href="log.html">gates &amp; hashes <span class="arw-r">→</span></a>
     </div>
   </section>
@@ -387,10 +376,8 @@ footer .wrap{padding-block:46px 40px}
       <h2>writings</h2>
       <p class="sub">long technical teardowns and short notes <i>(the thinking layer)</i>.
         the log records what happened; this is what i make of it.</p>
-      <div class="rows">
-        <!-- newest first. a .row.wip is claimed but unwritten — never a link. -->
-        <a class="row" href="essay.html"><span class="rl"><span class="rg">[essay]</span><span class="rt">why the slowest gpu i own is the whole point</span></span><span class="rd">08.28.26</span></a>
-      </div>
+      <!-- the newest writing, from data.js -->
+      <div class="rows" id="hwrite"></div>
       <a class="more" href="writings.html">all writings <span class="arw-r">→</span></a>
     </div>
   </section>
@@ -423,15 +410,8 @@ footer .wrap{padding-block:46px 40px}
       <p class="sub">a second brain, kept in public: distilled notes from papers,
         manuals, and the machine itself — mapped by concept, corrected in place.
         the log is a record; the garden is a state.</p>
-      <div class="topics">
-        <!-- each plate deep-links into the garden and opens that plant's drawer -->
-        <a href="garden.html#mmap">mmap &amp; the page cache</a>
-        <a href="garden.html#avx2">avx2 intrinsics</a>
-        <a href="garden.html#perf">perf(1) &amp; rapl</a>
-        <a href="garden.html#gguf">gguf, byte by byte</a>
-        <a href="garden.html#quant">4-bit quantization</a>
-        <a href="garden.html#spec">speculative decoding</a>
-      </div>
+      <!-- one link per note in data.js; each opens that plant's drawer in the garden -->
+      <div class="topics" id="htopics"></div>
       <a class="more" href="garden.html">enter the garden <span class="arw-r">→</span></a>
     </div>
   </section>
@@ -467,6 +447,7 @@ footer .wrap{padding-block:46px 40px}
   </div>
 </footer>
 
+<script src="data.js"></script>
 <script src="lamp.js"></script>
 <script>
 (function(){
@@ -509,12 +490,13 @@ tickClock();setInterval(tickClock,30000);
    inclusive) when the clock was stopped: those days are not counted, and the year
    runs that much longer, so "day 022" always means the 22nd day of actual work.
    the strip draws a thin ember splice where each pause sits — hover it for dates.
-   paste logged day numbers (1-based) from the console json export. */
+   the start, the pauses and the logged days all come from data.js. */
+var DS=window.DS||{start:"08.31.26",pauses:[],days:[],gates:[],writings:[],garden:{notes:[],links:[]}};
 var DAYMS=86400000, TOTAL=365;
 function lagosDay(s){var p=s.split(".");return Date.UTC(2000+(+p[2]),p[0]-1,+p[1])-3600000}
-var START=lagosDay("08.31.26");
-var PAUSES=[["09.21.26","11.02.26"]];
-var loggedDays=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
+var START=lagosDay(DS.start);
+var PAUSES=DS.pauses;
+var loggedDays=DS.days.map(function(h){return h.d});
 var PZ=PAUSES.map(function(p){return [Math.round((lagosDay(p[0])-START)/DAYMS),
   Math.round((lagosDay(p[1])-START)/DAYMS)]});
 function workOf(c){var off=0;          /* calendar day index -> working day index, -1 inside a pause */
@@ -581,6 +563,22 @@ function ignite(){
   if(stripIdx!==lastIdx){lastIdx=stripIdx;buildStrip(stripIdx)}
 }
 ignite();setInterval(ignite,1000);
+
+/* the newest gate, the newest writing and the garden's notes, from data.js. a piece
+   that isn't out yet is a <div>, never an <a>, so it can't be a dead click, and its
+   verb types itself out to say it's being worked on */
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var VERBS={g:["measuring","timing","re-running","verifying","writing up"],n:["drafting","thinking","rewriting","cutting","hedging"]};
+function verb(k,label){return '<span class="verb '+k+'" role="img" aria-label="'+label+'"><i>'+VERBS[k].join("</i><i>")+'</i></span>'}
+function row(tag,it,k,label,after){
+  var t='<span class="rl"><span class="rg">['+tag+']</span><span class="rt">'+esc(it.title)+'</span></span>';
+  return it.date?'<a class="row" href="'+esc(it.page)+'">'+t+'<span class="rd">'+esc(it.date)+(after||"")+'</span></a>'
+    :'<div class="row wip">'+t+'<span class="rd">'+verb(k,label)+'</span></div>'}
+var g0=DS.gates[0], w0=DS.writings.filter(function(w){return w.date})[0]||DS.writings[0];
+q("#hgate").innerHTML=g0?row("gate",g0,"g","in progress",g0.status==="next"?"":" · "+g0.status):"";
+q("#hwrite").innerHTML=w0?row(w0.kind,w0,"n","being written"):"";
+q("#htopics").innerHTML=DS.garden.notes.map(function(n){
+  return '<a href="garden.html#'+esc(n.id)+'">'+esc(n.label)+'</a>'}).join("");
 
 /* the hero — lamp.js. the bulb hangs in the margin beside the copy, and a moth
    that lands keeps off every block of it */
