@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <!--
   dead-silicon — the garden: an internal knowledge base, kept in public.
-  the network is a HAND-ROLLED physarum (slime-mould) simulation — no d3, no
-  libraries, no webgl. invariant: 0 frameworks. it lives below, right after DATA:
-  notes are the food, every edge in LINKS lays a scent line, the mould grows the veins.
+  the garden is drawn in cross-section: each note is a plant at its stage, and the
+  links are fungal threads joining their roots under the soil, grown with a HAND-ROLLED
+  flow model (tero et al.) — no d3, no libraries, no webgl. invariant: 0 frameworks.
+  it lives below, right after DATA: every edge in LINKS is a flow the fungus has to
+  carry, and the threads it keeps are those claims.
 
   PLANT RITUAL (the day a note gets written):
-    1. copy garden-note.html -> garden-<id>.html and write it
+    1. copy _templates/garden-note.html -> garden-<id>.html (next to this file) and write it
     2. in NODES below: set status:"growing", planted:"MM.DD.YY", page:"garden-<id>.html"
     3. push. the network, the drawer, and the list rebuild themselves from NODES.
   TEND RITUAL: edit the note, bump tended:"MM.DD.YY".
@@ -88,9 +90,9 @@ main{padding:56px 0 30px}
 .col{max-width:var(--w);margin-inline:auto;padding:0 20px}
 h1{margin:0;font-weight:800;letter-spacing:.01em;font-size:clamp(1.3rem,3vw,1.7rem)}
 .sub{margin:14px 0 0;color:var(--dim);font-size:.9rem}
-/* the network — full-bleed: a living slime-mould map of the notes */
+/* the garden — full-bleed, in cross-section: plants above the soil, their links below it */
 .graph{position:relative;margin-top:30px;border-block:1px solid var(--line)}
-#kg{display:block;width:100%;height:clamp(400px,64vh,640px);touch-action:pan-y;cursor:crosshair}
+#kg{display:block;width:100%;height:clamp(400px,64vh,640px);touch-action:pan-y}
 .hint{position:absolute;left:20px;right:84px;top:10px;font-size:.7rem;color:var(--mute);
   letter-spacing:.03em;pointer-events:none}
 .gx{position:absolute;right:20px;top:4px;font-size:.7rem;color:var(--mute);letter-spacing:.03em}
@@ -179,6 +181,7 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
 @keyframes tk{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.cur,.tk{animation:none}.fnav .arw,.fnav .arw-u{transition:none}}
 @media (max-width:640px){.tick{display:none}
+  .graph .hint{position:static;display:block;padding:10px 84px 8px 18px}
   .drawer{top:auto;left:0;right:0;width:100%;max-height:72vh;border-left:0;
     border-top:1px solid var(--line);transform:translateY(103%)}
   .laws li{grid-template-columns:1fr}.fnav .totop{margin-left:0}}
@@ -213,7 +216,7 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
   </div>
 
   <div class="graph">
-    <span class="hint"># drag a note · click it to read · click open ground to drop a crumb</span>
+    <span class="hint"># each note is a plant; the threads under the soil are its links · hover one, drag it, click to read · click the soil to water it</span>
     <span class="stat" id="gstat"></span>
     <button class="gx" id="gx" type="button">expand</button>
     <canvas id="kg" aria-hidden="true"></canvas>
@@ -264,7 +267,7 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
       <li><b>here</b><span>an edge in this garden is a claim.</span></li>
     </ol>
     <nav class="fnav" aria-label="footer">
-      <a href="index.html">home</a><a href="log.html">log</a><a href="writings.html">writings</a><a href="garden.html">garden</a>
+      <a href="log.html">log</a><a href="writings.html">writings</a>
       <a href="https://github.com/elijahadeb" target="_blank" rel="noopener">github <span class="arw">↗</span></a>
       <a href="https://x.com/elijahadeb" target="_blank" rel="noopener">x <span class="arw">↗</span></a>
       <a class="totop" href="#top">top <span class="arw-u">↓</span></a>
@@ -307,39 +310,45 @@ var LINKS=[["mmap","gguf"],["gguf","quant"],["quant","spec"],
 var byId={};NODES.forEach(function(n){byId[n.id]=n});
 var L=LINKS.map(function(p){return [byId[p[0]],byId[p[1]]]});
 
-/* ---- the network ---------------------------------------------------------------
-   the garden as a living thing: a physarum (slime-mould) simulation, after jeff
-   jones's 2010 agent model. thousands of agents wander a trail map. each one
-   smells ahead-left, ahead and ahead-right, turns toward the strongest scent,
-   steps, and leaves scent of its own. the trail spreads a little and fades. that
-   is the whole rule, and it is enough to grow transport networks — the same mould
-   that famously redrew tokyo's rail map between oat flakes.
-   here the oat flakes are the notes. every note seeps scent (a seed a little,
-   growing more, evergreen most), and every edge in LINKS lays a faint scent line
-   between its two notes. so the veins the mould settles into are exactly the
-   claims in LINKS: organic on the surface, honest underneath.
-   it grows out from the notes on load. hover a note and it feeds harder; drag one
-   and the network re-routes; click open ground to drop a crumb and watch it reach.
+/* ---- the garden ------------------------------------------------------------------
+   the garden in cross-section. above the soil, each note is a plant at the stage it
+   has reached — a seed, a seedling, an evergreen (the digital garden's own
+   convention, after maggie appleton). below it, the links are the wood wide web:
+   fungal threads joining their roots, the network trees use to pass food to one
+   another (simard et al., nature 1997).
+
+   the threads are grown, not drawn: tero et al.'s flow model (science 2010) on a
+   lattice of short segments through the soil. every link is a flow the fungus has to
+   carry between two roots; a segment that carries flow thickens, an idle one starves
+   and is taken back. that is what real mycelium does — it reinforces its busy cords
+   and recycles the rest (bebber et al., 2007) — so the threads that survive are
+   exactly the claims in LINKS. it grows out from the busiest root when the page
+   opens, thins into cords, and food pulses along them, back and forth.
+   hover a plant to see what it feeds; drag it along the soil and the threads
+   re-route; click the soil to water it and the threads reach for the water.
    reduced motion gets the grown network, still. */
 var cv=q("#kg"), ctx=cv.getContext("2d"), FONT=cvar("--mono");
-var W=0, H=0, DPR=1, GW=0, GH=0, K=2;
-var TR=null, TB=null;                 /* trail map + blur scratch, one float per cell */
-var off=doc.createElement("canvas"), octx=off.getContext("2d"), IMG=null, PIX=null;
-var LUT=new Uint32Array(256);
-var AX=null, AY=null, AH=null, AL=null, NA=0, NMAX=0;
-var crumbs=[], hov=null, sel=null, dragN=null, down=null;
-var run=false, vis=false, last=0, T=0, cost=6, SCALE=1, LINKW=7;
-/* sensor angle, sensor distance (cells), turn angle, step (cells), deposit, decay */
-var SA=0.4, SD=9, RA=0.3, SS=1, DEP=0.45, DECAY=0.89;
-var cSA=Math.cos(SA), sSA=Math.sin(SA);
+var W=0, H=0, DPR=1, SP=18, LR=0, LC=0, GY=0, LY0=0;
+var NN=0, NX=null, NY=null, ALIVE=null, BORN=null, TRAIL=null, ATT=null, SINK=null, ADJ0=null, ADJE=null, ADJN=null;
+var NE=0, EA=null, EB=null, EL=null, ED=null, EQ=null, CX=null, CY=null;
+var COMM=[], home=null, drops=[], hov=null, sel=null, dragN=null, down=null;
+var run=false, vis=false, T=0, reached=0, grains=[], STEPS=0, TDEC=0.9985;
+var I0=1, IF=1.4, MU=1.8, Q0=0.6, RATE=1.1, D0=0.26, DMIN=0.012, OMEGA=1.6;
+var bgC=doc.createElement("canvas"), rootC=doc.createElement("canvas"), rootsDirty=true, PAL=null;
+var trail=doc.createElement("canvas"), tctx=trail.getContext("2d"), TIMG=null, TPIX=null, TW=0, TH=0;
+var breeze=0, lastMX=null;
 
 function clampN(v,a,b){return v<a?a:v>b?b:v}
 function hashId(s){var h=7;for(var i=0;i<s.length;i++)
   h=Math.imul(h^s.charCodeAt(i),2654435761);return h>>>0}
+/* how tall each stage stands above the soil, and how deep its roots go */
+function stalk(n){return n.status==="evergreen"?64:n.status==="growing"?40:0}
+function deep(n){return n.status==="evergreen"?136:n.status==="growing"?74:28}
+function soilY(x){return GY+2.4*Math.sin(x/53)+1.4*Math.sin(x/17+1)}
 
-/* the same seeded force layout the old concept map used, run to rest offline:
-   coulomb repulsion + spring edges + weak centring. it only decides where the
-   oat flakes go; the mould does the rest. */
+/* the same seeded force layout the old concept map used; past eight notes it decides
+   the order along the soil. below that every order is tried, and the one that keeps
+   linked notes closest together wins */
 function settle(){
   var rnd=mulberry32(42),i,j,a,b,dx,dy,d2,d,f,ux,uy,n,alpha=1;
   NODES.forEach(function(nd,k){var an=6.28318*k/NODES.length+rnd()*0.6, r=70+rnd()*50;
@@ -354,226 +363,440 @@ function settle(){
       n.vx*=0.8;n.vy*=0.8;n.x+=n.vx*alpha;n.y+=n.vy*alpha;}
   }
 }
-/* stretch the layout over the canvas, but never more than 1.7x out of true */
-function fit(){
-  var minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
-  NODES.forEach(function(n){minx=Math.min(minx,n.x);maxx=Math.max(maxx,n.x);
-    miny=Math.min(miny,n.y);maxy=Math.max(maxy,n.y)});
-  var px=Math.max(70,W*0.13), py=Math.max(54,H*0.15);
-  var sx=(W-2*px)/Math.max(1,maxx-minx), sy=(H-2*py)/Math.max(1,maxy-miny), s=Math.min(sx,sy);
-  sx=Math.min(sx,s*1.7);sy=Math.min(sy,s*1.7);
-  var cx=(minx+maxx)/2, cy=(miny+maxy)/2;
-  NODES.forEach(function(n){n.px=W/2+(n.x-cx)*sx;n.py=H/2+(n.y-cy)*sy;n.hh=hashId(n.id)});
+function order(){
+  var n=NODES.length,idx=NODES.map(function(_,i){return i});
+  if(n>8)return idx.sort(function(a,b){return NODES[a].x-NODES[b].x});
+  var best=idx.slice(),bc=1e9;
+  function cost(o){var pos={},c=0;o.forEach(function(k,i){pos[NODES[k].id]=i});
+    L.forEach(function(l){c+=Math.abs(pos[l[0].id]-pos[l[1].id])});return c}
+  (function perm(a,k){if(k===a.length){var c=cost(a);if(c<bc){bc=c;best=a.slice()}return}
+    for(var i=k;i<a.length;i++){var t=a[k];a[k]=a[i];a[i]=t;perm(a,k+1);t=a[k];a[k]=a[i];a[i]=t}})(idx,0);
+  return best;
+}
+/* the sky only needs to be as tall as the tallest plant and its label */
+function layout(){
+  var tall=0;NODES.forEach(function(n){tall=Math.max(tall,stalk(n))});
+  GY=Math.round(clampN(tall+(W<700?74:62),72,H*0.42));
+  var o=order(),m=Math.max(52,W*0.08),span=W-2*m;
+  o.forEach(function(k,i){var nd=NODES[k];if(!nd.placed)nd.px=NODES.length>1?m+span*i/(NODES.length-1):W/2;
+    nd.hh=hashId(nd.id);nd.row=i&1});
+  NODES.forEach(function(nd){nd.py=soilY(nd.px);nd.ry=Math.min(H-24,nd.py+deep(nd))})
 }
 
-/* colour: one lookup from scent to pixel. ink on paper by day — veins darken into
-   ember where they're thickest; in the dark theme they glow */
-function buildLUT(){
-  var dark=root.getAttribute("data-theme")==="dark";
-  var bg=dark?[11,12,14]:[232,230,223], vein=dark?[222,216,200]:[38,34,32], hot=dark?[207,106,43]:[150,70,20];
-  function sm(a,b,x){var t=clampN((x-a)/(b-a),0,1);return t*t*(3-2*t)}
-  for(var i=0;i<256;i++){
-    var u=1-Math.exp(-(i/SCALE)/28), a=sm(0.04,0.88,u)*0.94, e=sm(0.9,1,u)*0.55;
-    var r=bg[0]+(vein[0]-bg[0])*a, g=bg[1]+(vein[1]-bg[1])*a, b=bg[2]+(vein[2]-bg[2])*a;
-    r+=(hot[0]-r)*e;g+=(hot[1]-g)*e;b+=(hot[2]-b)*e;
-    LUT[i]=(255<<24)|((b|0)<<16)|((g|0)<<8)|(r|0);
-  }
+/* the lattice: a jittered triangular mesh through the soil, every edge a potential thread */
+function lattice(){
+  var rnd=mulberry32(91),i,j,k,ea=[],eb=[];
+  LY0=GY+8;LR=Math.ceil((H-LY0)/(SP*0.866))+1;LC=Math.ceil(W/SP)+2;NN=LR*LC;
+  NX=new Float32Array(NN);NY=new Float32Array(NN);
+  for(j=0;j<LR;j++)for(i=0;i<LC;i++){k=j*LC+i;
+    NX[k]=(i-0.5+(j&1)*0.5)*SP+(rnd()-0.5)*SP*0.5;NY[k]=Math.min(H-4,LY0+j*SP*0.866+(rnd()-0.5)*SP*0.45)}
+  for(j=0;j<LR;j++)for(i=0;i<LC;i++){k=j*LC+i;var o=j&1;
+    if(i+1<LC){ea.push(k);eb.push(k+1)}
+    if(j+1<LR){if(i-1+o>=0){ea.push(k);eb.push((j+1)*LC+i-1+o)}if(i+o<LC){ea.push(k);eb.push((j+1)*LC+i+o)}}}
+  NE=ea.length;EA=Int32Array.from(ea);EB=Int32Array.from(eb);
+  EL=new Float32Array(NE);ED=new Float32Array(NE);EQ=new Float32Array(NE);
+  CX=new Float32Array(NE);CY=new Float32Array(NE);
+  for(k=0;k<NE;k++){var ax=NX[EA[k]],ay=NY[EA[k]],bx=NX[EB[k]],by=NY[EB[k]],o=(rnd()-0.5)*0.42;
+    EL[k]=Math.max(0.3,Math.hypot(bx-ax,by-ay)/SP);CX[k]=(ax+bx)/2-(by-ay)*o;CY[k]=(ay+by)/2+(bx-ax)*o}
+  var deg=new Int32Array(NN);for(k=0;k<NE;k++){deg[EA[k]]++;deg[EB[k]]++}
+  ADJ0=new Int32Array(NN+1);for(i=0;i<NN;i++)ADJ0[i+1]=ADJ0[i]+deg[i];
+  ADJE=new Int32Array(ADJ0[NN]);ADJN=new Int32Array(ADJ0[NN]);var fill=ADJ0.slice(0,NN);
+  for(k=0;k<NE;k++){var a=EA[k],b=EB[k];ADJE[fill[a]]=k;ADJN[fill[a]++]=b;ADJE[fill[b]]=k;ADJN[fill[b]++]=a}
+  ALIVE=new Uint8Array(NN);BORN=new Float32Array(NN);TRAIL=new Float32Array(NN);ATT=new Float32Array(NN);SINK=new Uint8Array(NN);
 }
-
+function cellAt(x,y){
+  var r0=Math.round((y-LY0)/(SP*0.866)),c0=Math.round(x/SP+0.5),best=0,bd=1e18;
+  for(var r=r0-2;r<=r0+2;r++)for(var c=c0-2;c<=c0+2;c++){if(r<0||c<0||r>=LR||c>=LC)continue;
+    var k=r*LC+c,dx=NX[k]-x,dy=NY[k]-y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=k}}
+  return best}
+/* what the fungus is carrying: every claimed link, plus water's pull on the two
+   nearest roots */
+function commodities(){
+  var old=COMM;COMM=[];
+  function add(a,b){for(var i=0;i<old.length;i++)if(old[i].a===a&&old[i].b===b){COMM.push(old[i]);return}
+    COMM.push({a:a,b:b,path:[]})}
+  L.forEach(function(l){add(l[0],l[1])});
+  drops.forEach(function(w){w.near.forEach(function(n){add(w,n)})});
+}
+function rootCells(){
+  NODES.forEach(function(n){n.cell=cellAt(n.px,n.ry)});drops.forEach(function(w){w.cell=cellAt(w.x,w.y)});attract()}
+function isFood(k){for(var i=0;i<NODES.length;i++)if(NODES[i].cell===k)return true;
+  for(i=0;i<drops.length;i++)if(drops[i].cell===k)return true;return false}
+/* the threads grow faster toward roots and water they haven't reached */
+function attract(){
+  var tg=[],i,k,R=Math.max(W,H)*0.42;reached=0;
+  NODES.concat(drops).forEach(function(n){if(ALIVE[n.cell])reached++;else tg.push(n)});
+  for(k=0;k<NN;k++){var a=0.22*(NY[k]-GY)/(H-GY);for(i=0;i<tg.length;i++){var dx=NX[k]-NX[tg[i].cell],dy=NY[k]-NY[tg[i].cell];
+    a=Math.max(a,Math.exp(-Math.sqrt(dx*dx+dy*dy)/R))}ATT[k]=a}
+}
+/* a hypha grows out of one parent; now and then it also fuses with a neighbour it
+   touches (anastomosis), which is how a fungus closes loops */
+function birth(k){
+  ALIVE[k]=1;BORN[k]=T;
+  var par=-1,n=0,t;
+  for(t=ADJ0[k];t<ADJ0[k+1];t++)if(ALIVE[ADJN[t]]&&Math.random()*(++n)<1)par=t;
+  for(t=ADJ0[k];t<ADJ0[k+1];t++){var j=ADJN[t];if(!ALIVE[j])continue;
+    if(t===par)ED[ADJE[t]]=D0;else if(Math.random()<0.3)ED[ADJE[t]]=D0*0.6}
+}
+function seedFungus(){
+  var deg={},best=NODES[0];
+  L.forEach(function(l){deg[l[0].id]=(deg[l[0].id]||0)+1;deg[l[1].id]=(deg[l[1].id]||0)+1});
+  NODES.forEach(function(n){if((deg[n.id]||0)>(deg[best.id]||0))best=n});home=best;
+  for(var k=0;k<NN;k++){var dx=NX[k]-home.px,dy=NY[k]-home.ry;if(dx*dx+dy*dy<SP*SP*2.2)birth(k)}
+  attract();
+}
+/* the panel is as deep as the garden needs: sky for the tallest plant, soil for the
+   deepest roots and room below them for the fungus to forage */
+function fitHeight(){
+  if(typeof isFull!=="undefined"&&isFull){cv.style.height="";return}
+  var tall=0,dp=0;NODES.forEach(function(n){tall=Math.max(tall,stalk(n));dp=Math.max(dp,deep(n))});
+  var w=cv.getBoundingClientRect().width,need=clampN(tall+(w<700?74:62),72,9999)+dp+(w<700?170:220);
+  cv.style.height=Math.round(clampN(need,320,Math.max(320,window.innerHeight*0.72)))+"px";
+}
 function init(){
+  fitHeight();
   var r=cv.getBoundingClientRect();
   W=Math.max(1,Math.round(r.width));H=Math.max(1,Math.round(r.height));
   DPR=Math.min(2,window.devicePixelRatio||1);
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
-  K=W<700?1.3:1.5;
-  GW=Math.max(40,Math.round(W/K));GH=Math.max(40,Math.round(H/K));
-  TR=new Float32Array(GW*GH);TB=new Float32Array(GW*GH);
-  off.width=GW;off.height=GH;IMG=octx.createImageData(GW,GH);PIX=new Uint32Array(IMG.data.buffer);
-  fit();buildLUT();
-  NMAX=Math.round(clampN(GW*GH*0.17,5000,42000));if(reduced)NMAX=Math.min(NMAX,12000);
-  NA=NMAX;AX=new Float32Array(NA);AY=new Float32Array(NA);AH=new Float32Array(NA);AL=new Uint16Array(NA);
-  /* everyone starts at a note, so the network visibly grows out from them */
-  for(var i=0;i<NA;i++){var n=NODES[i%NODES.length], a=Math.random()*6.283, d=Math.random()*10;
-    AX[i]=clampN(n.px/K+Math.cos(a)*d,1,GW-2);AY[i]=clampN(n.py/K+Math.sin(a)*d,1,GH-2);
-    AH[i]=Math.random()*6.283;AL[i]=160+Math.random()*320;}
-  T=0;
-}
-/* agents live a few seconds, then start over somewhere along a claimed link,
-   heading one way or the other down it. strays get recycled, so the mould keeps
-   rebuilding exactly the edges in LINKS while it explores around them */
-function respawn(i){
-  if(!L.length)return;
-  var tot=0,k,ls=[];
-  for(k=0;k<L.length;k++){var d=Math.hypot(L[k][1].px-L[k][0].px,L[k][1].py-L[k][0].py);ls.push(d);tot+=d}
-  var pick=Math.random()*tot;for(k=0;k<L.length-1&&pick>ls[k];k++)pick-=ls[k];
-  var a=L[k][0],b=L[k][1],t=Math.random(),dx=(b.px-a.px)/K,dy=(b.py-a.py)/K,ln=Math.hypot(dx,dy)||1,j=(Math.random()-0.5)*4;
-  AX[i]=clampN(a.px/K+dx*t-dy/ln*j,1,GW-2);AY[i]=clampN(a.py/K+dy*t+dx/ln*j,1,GH-2);
-  AH[i]=Math.atan2(dy,dx)+(Math.random()<0.5?Math.PI:0)+(Math.random()-0.5)*0.5;
-  AL[i]=160+Math.random()*320;
+  SP=clampN(Math.round(Math.min(W,H*1.6)/60),11,18);
+  NODES.forEach(function(n){n.placed=false});
+  layout();lattice();drops=[];COMM=[];rootCells();commodities();seedFungus();
+  TW=Math.ceil(W/4);TH=Math.ceil(H/4);trail.width=TW;trail.height=TH;TIMG=tctx.createImageData(TW,TH);
+  TPIX=new Uint32Array(TIMG.data.buffer);
+  grains=[];T=0;recolour();
 }
 
-function blob(x,y,rad,amt){
-  var x0=Math.max(1,(x-rad)|0),x1=Math.min(GW-2,(x+rad)|0),y0=Math.max(1,(y-rad)|0),y1=Math.min(GH-2,(y+rad)|0);
-  for(var yy=y0;yy<=y1;yy++)for(var xx=x0;xx<=x1;xx++){
-    var dx=xx-x,dy=yy-y;if(dx*dx+dy*dy<=rad*rad)TR[yy*GW+xx]+=amt;}
+/* routing. on a network of tubes the flow follows the easy way through, and a thick
+   tube is easier than a thin one; so each link's flow takes the least-resistance
+   route through the threads that exist (dijkstra, length over conductivity), and
+   the growing tips are fed the same way from the root it all grew out of. busy routes
+   thicken and get easier still; that feedback is the whole of tero's rule */
+var DIST=null,PREV=null,HK=null,HV=null,HN=0;
+function hpush(k,v){var i=HN++;HK[i]=k;HV[i]=v;while(i>0){var p=(i-1)>>1;if(HK[p]<=HK[i])break;
+  var tk=HK[p];HK[p]=HK[i];HK[i]=tk;var tv=HV[p];HV[p]=HV[i];HV[i]=tv;i=p}}
+function hpop(){var v=HV[0];HN--;if(HN>0){HK[0]=HK[HN];HV[0]=HV[HN];var i=0;
+  for(;;){var l=2*i+1,r=l+1,m=i;if(l<HN&&HK[l]<HK[m])m=l;if(r<HN&&HK[r]<HK[m])m=r;if(m===i)break;
+    var tk=HK[m];HK[m]=HK[i];HK[i]=tk;var tv=HV[m];HV[m]=HV[i];HV[i]=tv;i=m}}return v}
+function dijkstra(src){
+  if(!DIST||DIST.length!==NN){DIST=new Float64Array(NN);PREV=new Int32Array(NN);HK=new Float64Array(NE*2+8);HV=new Int32Array(NE*2+8)}
+  DIST.fill(Infinity);PREV.fill(-1);DIST[src]=0;HN=0;hpush(0,src);
+  while(HN){var u=hpop(),du=DIST[u];
+    for(var t=ADJ0[u];t<ADJ0[u+1];t++){var e=ADJE[t];if(ED[e]<=0)continue;var v=ADJN[t],nd=du+EL[e]/(ED[e]+0.05);
+      if(nd<DIST[v]){DIST[v]=nd;PREV[v]=e;hpush(nd,v)}}}
 }
-function line(ax,ay,bx,by,amt){
-  var dx=bx-ax,dy=by-ay,n=Math.max(1,Math.ceil(Math.sqrt(dx*dx+dy*dy)));
-  for(var s=0;s<=n;s++){var x=(ax+dx*s/n)|0,y=(ay+dy*s/n)|0;
-    if(x>0&&y>0&&x<GW-1&&y<GH-1)TR[y*GW+x]+=amt;}
+function route(src,dst,amt,list){
+  if(DIST[dst]===Infinity)return;var v=dst,n=0;
+  while(v!==src&&n++<NN){var e=PREV[v];if(e<0)return;EQ[e]+=amt;if(list)list.push(e);v=EA[e]===v?EB[e]:EA[e]}
 }
-function feedOf(n){
-  var s=n.status==="evergreen"?6:n.status==="growing"?4.5:3;
-  if(n===hov||n===sel||n===dragN)s*=2.4;
-  return s;
-}
-
-function step(){
-  var i,n,gw=GW,gh=GH,tr=TR;
-  /* the food: notes seep, links lay a faint line, crumbs fade out */
-  for(i=0;i<NODES.length;i++){n=NODES[i];blob(n.px/K,n.py/K,3,feedOf(n))}
-  for(i=0;i<L.length;i++){var ax=L[i][0].px/K,ay=L[i][0].py/K,bx=L[i][1].px/K,by=L[i][1].py/K,
-    ln=Math.hypot(bx-ax,by-ay)||1,ox=-(by-ay)/ln,oy=(bx-ax)/ln;
-    line(ax,ay,bx,by,0.22*LINKW);line(ax+ox,ay+oy,bx+ox,by+oy,0.12*LINKW);line(ax-ox,ay-oy,bx-ox,by-oy,0.12*LINKW);}
-  for(i=crumbs.length-1;i>=0;i--){var c=crumbs[i];c.life-=1/60;
-    blob(c.x/K,c.y/K,2.5,3*Math.min(1,c.life/2));if(c.life<=0)crumbs.splice(i,1)}
-  /* the mould: smell, turn, step, leave scent */
-  for(i=0;i<NA;i++){
-    var x=AX[i],y=AY[i],h=AH[i],ch=Math.cos(h),sh=Math.sin(h);
-    var fx=(x+ch*SD)|0, fy=(y+sh*SD)|0;
-    var lx=(x+(ch*cSA+sh*sSA)*SD)|0, ly=(y+(sh*cSA-ch*sSA)*SD)|0;
-    var rx=(x+(ch*cSA-sh*sSA)*SD)|0, ry=(y+(sh*cSA+ch*sSA)*SD)|0;
-    var F=fx>0&&fy>0&&fx<gw&&fy<gh?tr[fy*gw+fx]:-1;
-    var FL=lx>0&&ly>0&&lx<gw&&ly<gh?tr[ly*gw+lx]:-1;
-    var FR=rx>0&&ry>0&&rx<gw&&ry<gh?tr[ry*gw+rx]:-1;
-    if(F>FL&&F>FR){}
-    else if(F<FL&&F<FR)h+=Math.random()<0.5?-RA:RA;
-    else if(FL>FR)h-=RA;
-    else if(FR>FL)h+=RA;
-    h+=(Math.random()-0.5)*0.1;
-    x+=Math.cos(h)*SS;y+=Math.sin(h)*SS;
-    if(x<1){x=1;h=Math.PI-h}else if(x>gw-2){x=gw-2;h=Math.PI-h}
-    if(y<1){y=1;h=-h}else if(y>gh-2){y=gh-2;h=-h}
-    AX[i]=x;AY[i]=y;AH[i]=h;
-    tr[(y|0)*gw+(x|0)]+=DEP;
-    if(--AL[i]===0)respawn(i);
+var forageI=IF;
+function step(dt){
+  var i,k,e,t,tdec=Math.pow(TDEC,dt*60);
+  T+=dt;
+  /* the growing edge: dead soil next to the fungus comes alive, faster toward roots
+     and water, slower across ground it has already given up */
+  var all=reached>=NODES.length+drops.length,gr=all?0.008:0.05,nf=0;forageI=all?0.6:IF;
+  for(k=0;k<NN;k++){
+    if(ALIVE[k]){SINK[k]=0;if(T-BORN[k]<2.4){SINK[k]=1;nf++}continue}
+    var nb=0;for(t=ADJ0[k];t<ADJ0[k+1];t++)if(ALIVE[ADJN[t]]){nb=1;break}
+    if(!nb)continue;
+    if(Math.random()<gr*dt*60*(0.3+1.6*ATT[k])*(1-0.6*TRAIL[k])){birth(k);if(isFood(k))attract()}
   }
-  /* spread a little, fade a little: separable 3-tap blur, then decay */
-  var a=TR,b=TB,row,xx,yy,k;
-  for(yy=0;yy<gh;yy++){row=yy*gw;
-    b[row]=(a[row]*2+a[row+1])/3;
-    for(xx=1;xx<gw-1;xx++){k=row+xx;b[k]=(a[k-1]+a[k]+a[k+1])*0.33333}
-    k=row+gw-1;b[k]=(a[k-1]+a[k]*2)/3;}
-  for(xx=0;xx<gw;xx++){a[xx]=b[xx]*DECAY;a[(gh-1)*gw+xx]=b[(gh-1)*gw+xx]*DECAY}
-  for(yy=1;yy<gh-1;yy++){row=yy*gw;
-    for(xx=0;xx<gw;xx++){k=row+xx;a[k]=(b[k-gw]+b[k]+b[k+gw])*0.33333*DECAY}}
-  T+=1/60;
+  /* flow: every link along its route, plus what feeds the growing tips */
+  for(e=0;e<NE;e++)EQ[e]=0;
+  var srcs={};
+  for(i=0;i<COMM.length;i++){var cm=COMM[i];cm.path.length=0;if(ALIVE[cm.a.cell]&&ALIVE[cm.b.cell])(srcs[cm.a.cell]=srcs[cm.a.cell]||[]).push(cm)}
+  for(var sk in srcs){var s0=+sk;dijkstra(s0);srcs[sk].forEach(function(c){route(s0,c.b.cell,I0,c.path)})}
+  if(nf&&ALIVE[home.cell]){dijkstra(home.cell);var share=forageI/nf;for(k=0;k<NN;k++)if(SINK[k])route(home.cell,k,share,null)}
+  /* adapt: threads thicken with flow and wither without it. a new tip gets a couple
+     of seconds to grow before it has to earn its keep */
+  for(e=0;e<NE;e++){var d=ED[e];if(d<=0)continue;
+    var x=Math.pow(EQ[e]/Q0,MU),f=x/(1+x),young=T-Math.max(BORN[EA[e]],BORN[EB[e]])<2.2;
+    if(young&&f<d)f=d;
+    d+=dt*RATE*(f-d)+(Math.random()-0.5)*0.002;
+    ED[e]=d<DMIN?0:Math.min(1.3,d)}
+  /* soil with no thread left through it goes quiet, and stays a little marked */
+  for(k=0;k<NN;k++){if(!ALIVE[k]){if(TRAIL[k]>0)TRAIL[k]*=tdec;continue}
+    var any=0;for(t=ADJ0[k];t<ADJ0[k+1];t++)if(ED[ADJE[t]]>0){any=1;break}
+    if(!any&&k!==home.cell&&(!isFood(k)||T-BORN[k]>3)&&T-BORN[k]>0.5){ALIVE[k]=0;TRAIL[k]=1}}
+  /* it is one organism: anything cut off from every root is taken back */
+  if(++STEPS%20===0)prune();
+  /* water soaks away */
+  for(i=drops.length-1;i>=0;i--){var w=drops[i];w.life-=dt*(ALIVE[w.cell]?1:0.25);
+    if(w.life<=0){drops.splice(i,1);commodities();attract()}}
+  breeze*=Math.exp(-dt*1.6);
+  stepGrains(dt);
+}
+/* one organism, grown from one root: whatever loses its thread back to it is taken
+   back, roots included, so the growing edge goes out and finds them again */
+function prune(){
+  var seen=new Uint8Array(NN),st=[home.cell],k,t,lost=false;seen[home.cell]=1;
+  while(st.length){k=st.pop();for(t=ADJ0[k];t<ADJ0[k+1];t++){var j=ADJN[t];if(!seen[j]&&ED[ADJE[t]]>0){seen[j]=1;st.push(j)}}}
+  for(k=0;k<NN;k++)if(ALIVE[k]&&!seen[k]){ALIVE[k]=0;TRAIL[k]=Math.max(TRAIL[k],0.6);lost=lost||isFood(k);
+    for(t=ADJ0[k];t<ADJ0[k+1];t++)ED[ADJE[t]]=0}
+  if(lost)attract();
+}
+/* food pulses along the cords and turns back with the flow, a slow wave across the
+   whole network */
+var OMG=6.2832/7;
+function wave(x,y){return Math.sin(OMG*T-6.2832*(x*0.8+y*0.6)/(Math.max(W,H)*1.1))}
+function stepGrains(dt){
+  var i,g;
+  for(var tries=0;tries<12&&grains.length<Math.min(160,NE/36);tries++){var e=(Math.random()*NE)|0;
+    if(ED[e]>0.35)grains.push({e:e,s:Math.random(),v:0.6+Math.random()*0.8})}
+  for(i=grains.length-1;i>=0;i--){g=grains[i];var e2=g.e;if(ED[e2]<=0.2){grains.splice(i,1);continue}
+    var dir=wave(NX[EA[e2]],NY[EA[e2]])>0?1:-1;g.s+=dt*dir*g.v*(0.6+ED[e2])*2.2/EL[e2];
+    if(g.s>1||g.s<0){var at=g.s>1?EB[e2]:EA[e2],best=-1,bd=0;
+      for(var t=ADJ0[at];t<ADJ0[at+1];t++){var ee=ADJE[t];if(ee===e2||ED[ee]<0.25)continue;var sc=ED[ee]*Math.random();if(sc>bd){bd=sc;best=ee}}
+      if(best<0){grains.splice(i,1);continue}
+      g.e=best;g.s=EA[best]===at?0:1}}
 }
 
-/* notes are drawn the old map's way: stipple clusters, maturity is dot density.
-   seed = sparse ring, growing = ring + heart, evergreen = a mini orb. seeds
-   breathe on the site's 1.5s rhythm — a pulse means unfinished. */
-function drawNode(c,x,y,status,act,key,k){
-  k=k||1;var rnd=mulberry32(hashId(key||status)), ink=cvar("--ink"), ember=cvar("--ember");
-  var col=act?ember:ink, breathe=1, i, a;
-  if(status==="seed"&&!reduced&&key!=="legend")
-    breathe=0.5+0.5*(0.5+0.5*Math.sin(performance.now()/1500*6.283+hashId(key||"")%628/100));
-  function dot(dx,dy,r){c.fillStyle=col;c.globalAlpha=breathe;c.beginPath();
-    c.arc(x+dx*k,y+dy*k,r*k,0,6.283);c.fill();c.globalAlpha=1}
-  if(status==="seed"){for(i=0;i<7;i++){a=6.283*i/7+rnd()*0.25;dot(Math.cos(a)*6,Math.sin(a)*6,1.25)}}
-  else if(status==="growing"){dot(0,0,1.6);
-    for(i=0;i<10;i++){a=6.283*i/10+rnd()*0.2;dot(Math.cos(a)*7,Math.sin(a)*7,1.25)}}
-  else{dot(0,0,2.1);for(i=0;i<8;i++){a=6.283*i/8+0.3;dot(Math.cos(a)*4.6,Math.sin(a)*4.6,1.35)}
-    for(i=0;i<12;i++){a=6.283*i/12+rnd()*0.15;dot(Math.cos(a)*8.2,Math.sin(a)*8.2,1.1)}}
-  if(act){c.strokeStyle=ember;c.lineWidth=1;c.beginPath();c.arc(x,y,12*k,0,6.283);c.stroke()}
+/* ---- drawing it -------------------------------------------------------------------
+   sky and soil are painted once (strata, grains, pebbles, a lip of topsoil, grass);
+   the roots are painted when a plant moves; the threads, the food in them, the water
+   and the plants are drawn every frame. by night the threads glow faintly green, the
+   way some fungi really do. */
+function rgb(c,a){return a===undefined?"rgb("+c[0]+","+c[1]+","+c[2]+")":"rgba("+c[0]+","+c[1]+","+c[2]+","+a+")"}
+function soilPath(g){g.beginPath();g.moveTo(0,H);g.lineTo(0,soilY(0));for(var x=0;x<=W;x+=6)g.lineTo(x,soilY(x));
+  g.lineTo(W,soilY(W));g.lineTo(W,H);g.closePath()}
+function recolour(){
+  var dark=root.getAttribute("data-theme")==="dark";
+  PAL=dark?{sky0:[11,12,14],sky1:[23,24,28],soil0:[40,30,22],soil1:[49,38,28],soil2:[58,45,33],
+      gl:"rgba(255,235,205,0.07)",gd:"rgba(0,0,0,0.28)",lip:"rgba(0,0,0,0.55)",grass:[70,92,58],
+      thread:[226,240,214],glow:"rgba(160,240,180,0.14)",root:[158,134,102],stain:[88,74,56],stainA:0.4,leafA:0.88}
+    :{sky0:[236,234,227],sky1:[228,225,216],soil0:[92,70,51],soil1:[109,83,60],soil2:[124,96,70],
+      gl:"rgba(255,240,215,0.1)",gd:"rgba(40,26,14,0.22)",lip:"rgba(52,36,22,0.6)",grass:[100,126,66],
+      thread:[249,244,232],glow:"rgba(255,250,236,0.2)",root:[214,190,150],stain:[136,110,82],stainA:0.35,leafA:1};
+  PAL.dark=dark;PAL.dim=cvar("--dim");PAL.ember=cvar("--ember");PAL.page=cvar("--bg");
+  bgC.width=cv.width;bgC.height=cv.height;
+  var g=bgC.getContext("2d"),rnd=mulberry32(5),i,x,y;
+  g.setTransform(DPR,0,0,DPR,0,0);
+  var sg=g.createLinearGradient(0,0,0,GY);sg.addColorStop(0,rgb(PAL.sky0));sg.addColorStop(1,rgb(PAL.sky1));
+  g.fillStyle=sg;g.fillRect(0,0,W,GY+6);
+  var so=g.createLinearGradient(0,GY,0,H);so.addColorStop(0,rgb(PAL.soil0));so.addColorStop(0.45,rgb(PAL.soil1));
+  so.addColorStop(1,rgb(PAL.soil2));g.fillStyle=so;soilPath(g);g.fill();
+  g.save();soilPath(g);g.clip();
+  /* strata */
+  for(i=0;i<5;i++){y=GY+(H-GY)*(0.16+i*0.17)+rnd()*10;g.strokeStyle=i&1?PAL.gl:PAL.gd;g.lineWidth=6+rnd()*12;
+    g.beginPath();for(x=0;x<=W;x+=12){var yy=y+4*Math.sin(x/90+i)+2*Math.sin(x/31+i*2);if(x===0)g.moveTo(x,yy);else g.lineTo(x,yy)}g.stroke()}
+  /* grains and pebbles */
+  for(i=0;i<Math.round(W*(H-GY)/50);i++){x=rnd()*W;y=GY+rnd()*(H-GY);var s=0.6+rnd()*1.5;
+    g.fillStyle=rnd()<0.5?PAL.gl:PAL.gd;g.fillRect(x,y,s,s)}
+  for(i=0;i<Math.round(W/55);i++){x=rnd()*W;y=GY+16+rnd()*(H-GY-24);var rx=2+rnd()*5,ry=rx*(0.55+rnd()*0.3);
+    var pg=g.createRadialGradient(x-rx*0.3,y-ry*0.4,0.5,x,y,rx*1.2);
+    pg.addColorStop(0,dark?"rgba(150,134,116,0.55)":"rgba(200,184,160,0.85)");pg.addColorStop(1,dark?"rgba(64,52,42,0.55)":"rgba(104,86,64,0.85)");
+    g.fillStyle=pg;g.beginPath();g.ellipse(x,y,rx,ry,rnd()*3,0,6.283);g.fill()}
+  g.restore();
+  /* the lip of the topsoil, and some grass on it */
+  g.strokeStyle=PAL.lip;g.lineWidth=2;g.beginPath();for(x=0;x<=W;x+=6){y=soilY(x);if(x===0)g.moveTo(x,y);else g.lineTo(x,y)}g.stroke();
+  g.strokeStyle=rgb(PAL.grass,0.75);g.lineWidth=1;
+  for(x=3;x<W;x+=3+rnd()*8){if(rnd()<0.4)continue;var y0=soilY(x),h=2.5+rnd()*7,ln=(rnd()-0.5)*5;
+    g.beginPath();g.moveTo(x,y0);g.quadraticCurveTo(x+ln*0.3,y0-h*0.6,x+ln,y0-h);g.stroke()}
+  rootsDirty=true;
 }
+/* roots: a taproot that wanders down and thins out, side roots off it, fine hairs at
+   the tips. a seed has only the first root it puts out */
+function drawRoots(){
+  rootC.width=cv.width;rootC.height=cv.height;
+  var g=rootC.getContext("2d");g.setTransform(DPR,0,0,DPR,0,0);g.lineCap="round";g.strokeStyle=rgb(PAL.root,0.92);
+  NODES.forEach(function(n){
+    var rnd=mulberry32(n.hh),x0=n.px,y0=n.py+1,y1=n.ry,x1=n.px+(rnd()-0.5)*16,ph=rnd()*6.283;
+    var w0=n.status==="evergreen"?3.4:n.status==="growing"?2.3:1.4,i,t,px=x0,py=y0;
+    function at(t){return [x0+(x1-x0)*t+Math.sin(t*7+ph)*3.5*t,y0+(y1-y0)*t]}
+    for(i=1;i<=16;i++){t=i/16;var p=at(t);g.lineWidth=w0*(1-t*0.75);g.beginPath();g.moveTo(px,py);g.lineTo(p[0],p[1]);g.stroke();px=p[0];py=p[1]}
+    var nl=n.status==="evergreen"?6:n.status==="growing"?3:0;
+    for(i=0;i<nl;i++){t=0.18+0.7*rnd();var o=at(t),side=i&1?1:-1,an=Math.PI/2+side*(0.55+rnd()*0.7),
+      len=(y1-y0)*(0.22+rnd()*0.3),qx=o[0],qy=o[1];
+      for(var s=1;s<=8;s++){var u=s/8,nx=o[0]+Math.cos(an)*len*u,ny=o[1]+Math.sin(an)*len*u+u*u*len*0.25;
+        g.lineWidth=w0*0.55*(1-u*0.8);g.beginPath();g.moveTo(qx,qy);g.lineTo(nx,ny);g.stroke();qx=nx;qy=ny}}
+    g.lineWidth=0.6;g.strokeStyle=rgb(PAL.root,0.5);
+    for(i=0;i<7;i++){var hp=at(0.82+rnd()*0.18),ha=rnd()*6.283,hl=2+rnd()*4;
+      g.beginPath();g.moveTo(hp[0],hp[1]);g.lineTo(hp[0]+Math.cos(ha)*hl,hp[1]+Math.sin(ha)*hl);g.stroke()}
+    g.strokeStyle=rgb(PAL.root,0.92);
+  });
+}
+/* the plants. the breathing ones — seeds — are the ones on my mind */
+function leaf(c,x,y,dir,len,col){c.fillStyle=col;c.beginPath();c.moveTo(x,y);
+  c.quadraticCurveTo(x+dir*len*0.45,y-len*0.6,x+dir*len,y-len*0.2);c.quadraticCurveTo(x+dir*len*0.55,y+len*0.18,x,y);c.fill()}
+function drawPlant(c,x,y,status,hh,act,legend,k){
+  k=(k||1)*(status==="seed"&&!legend?1.4:1);var rnd=mulberry32(hh||1),sw=legend?0:Math.sin(T*1.25+(hh%628)/100)*0.5+breeze*Math.sin(T*7+(hh%97));
+  c.save();c.translate(x,y);
+  if(status==="seed"){
+    var br=1;if(!reduced&&!legend)br=0.5+0.5*Math.sin(performance.now()/1500*6.283+(hh%628)/100);
+    if(!legend){var gl=c.createRadialGradient(0,1,0,0,1,18*k);gl.addColorStop(0,"rgba(255,206,130,"+(0.18+0.3*br)+")");
+      gl.addColorStop(1,"rgba(255,206,130,0)");c.fillStyle=gl;c.fillRect(-18*k,-17*k,36*k,36*k)}
+    c.rotate(-0.3+(rnd()-0.5)*0.35);
+    var sg=c.createLinearGradient(-7*k,-5*k,7*k,5*k);sg.addColorStop(0,"#c99459");sg.addColorStop(1,"#6a4223");
+    c.fillStyle=sg;c.beginPath();c.moveTo(-8*k,0.6*k);
+    c.bezierCurveTo(-6*k,-5.2*k,5*k,-5.4*k,8.4*k,-0.4*k);c.bezierCurveTo(5*k,5.2*k,-6*k,5.4*k,-8*k,0.6*k);c.fill();
+    c.strokeStyle="rgba(255,232,196,0.6)";c.lineWidth=0.9*k;c.beginPath();c.moveTo(-5*k,0.2*k);c.quadraticCurveTo(0,-1.8*k,5.4*k,-0.4*k);c.stroke();
+    c.fillStyle="rgba(255,250,236,0.55)";c.beginPath();c.ellipse(-2.6*k,-1.9*k,2*k,0.9*k,-0.3,0,6.283);c.fill();
+  }else if(status==="growing"){
+    var hg=40*k,tx=sw*5*k;c.globalAlpha=legend?1:PAL.leafA;
+    c.strokeStyle="#5b8838";c.lineWidth=2.2*k;c.lineCap="round";c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(tx*0.3,-hg*0.55,tx,-hg);c.stroke();
+    leaf(c,tx,-hg,-1,12*k,"#7cae4a");leaf(c,tx,-hg,1,12*k,"#6a9e3e");
+    leaf(c,tx*0.55,-hg*0.55,1,8*k,"#86b852");c.globalAlpha=1;
+  }else{
+    var tr=64*k,tw=sw*3*k,i;c.globalAlpha=legend?1:PAL.leafA;
+    c.fillStyle="#6b4a2f";c.fillRect(-2.3*k,-12*k,4.6*k,12*k);
+    for(i=0;i<3;i++){var yb=-9*k-i*16*k,wd=(22-i*5.5)*k,tp=yb-(24-i*2)*k,sx=tw*i/3,ex=tw*(i+1)/3;
+      c.fillStyle=["#2f6446","#34704c","#3d7d55"][i];c.beginPath();c.moveTo(-wd+sx,yb);c.lineTo(ex,tp);c.lineTo(wd+sx,yb);c.closePath();c.fill();
+      c.fillStyle="rgba(190,230,170,0.22)";c.beginPath();c.moveTo(-wd+sx,yb);c.lineTo(ex,tp);c.lineTo(-wd*0.25+sx,yb);c.closePath();c.fill()}
+    c.globalAlpha=1;
+  }
+  if(act){c.strokeStyle=PAL.ember;c.lineWidth=1.4;c.beginPath();
+    c.moveTo(-15,6);c.lineTo(15,6);c.stroke()}
+  c.restore();
+}
+/* soil the fungus has given up: a paler streak, fading over minutes */
+function trails(){
+  var pix=TPIX,st=PAL.stain,k,x,y,c=(st[2]<<16)|(st[1]<<8)|st[0],rr=SP/4+2.6,ri=Math.ceil(rr);
+  pix.fill(0);
+  for(k=0;k<NN;k++){var v=TRAIL[k];if(v<0.03)continue;var a0=v*PAL.stainA*255,fx=NX[k]/4,fy=NY[k]/4,cx=fx|0,cy=fy|0;
+    for(y=cy-ri;y<=cy+ri;y++){if(y<0||y>=TH)continue;for(x=cx-ri;x<=cx+ri;x++){if(x<0||x>=TW)continue;
+      var dd=((x+0.5-fx)*(x+0.5-fx)+(y+0.5-fy)*(y+0.5-fy))/(rr*rr);if(dd>=1)continue;
+      var a=(a0*(1-dd))|0,o=y*TW+x,old=pix[o]>>>24;if(a>old)pix[o]=(a<<24)|c}}}
+  tctx.putImageData(TIMG,0,0);
+}
+/* the threads, bucketed by thickness so each width is one stroke: a soft halo, then
+   the thread itself. a slow bright band rides the wave of the flow */
+var BUCK=8,LISTS=[];for(var bi=0;bi<BUCK;bi++)LISTS.push([]);
+function threads(){
+  var b,i,e,list,wv=[];
+  for(b=0;b<BUCK;b++)LISTS[b].length=0;
+  for(e=0;e<NE;e++){var d=ED[e];if(d<0.05)continue;var qn=Math.min(1,(d-0.04)/0.9);
+    LISTS[Math.min(BUCK-1,(qn*BUCK)|0)].push(e);
+    if(qn>0.3&&wave((NX[EA[e]]+NX[EB[e]])/2,(NY[EA[e]]+NY[EB[e]])/2)>0.72)wv.push(e)}
+  ctx.lineCap="round";ctx.lineJoin="round";
+  for(var pass=0;pass<2;pass++)for(b=0;b<BUCK;b++){list=LISTS[b];if(!list.length)continue;
+    var w=0.45+3.4*Math.pow((b+0.5)/BUCK,1.3);ctx.lineWidth=pass?w:w+4;
+    ctx.strokeStyle=pass?rgb(PAL.thread,0.32+0.68*b/BUCK):PAL.glow;
+    ctx.beginPath();for(i=0;i<list.length;i++){e=list[i];ctx.moveTo(NX[EA[e]],NY[EA[e]]);ctx.quadraticCurveTo(CX[e],CY[e],NX[EB[e]],NY[EB[e]])}ctx.stroke()}
+  if(wv.length){ctx.lineWidth=2.4;ctx.strokeStyle=PAL.dark?"rgba(200,255,210,0.28)":"rgba(255,255,250,0.5)";
+    ctx.beginPath();for(i=0;i<wv.length;i++){e=wv[i];ctx.moveTo(NX[EA[e]],NY[EA[e]]);ctx.quadraticCurveTo(CX[e],CY[e],NX[EB[e]],NY[EB[e]])}ctx.stroke()}
+}
+/* the threads a plant is fed through: the flow of its own links */
+function feeds(n){
+  var on=[],seen=new Uint8Array(NE);
+  COMM.forEach(function(cm){if(cm.a!==n&&cm.b!==n)return;
+    cm.path.forEach(function(e){if(!seen[e]){seen[e]=1;on.push(e)}})});
+  return on}
+var PF=0;
 function paint(){
-  if(!TR)return;
-  var n=GW*GH, tr=TR, pix=PIX, lut=LUT;
-  for(var i=0;i<n;i++){var v=tr[i]*SCALE;pix[i]=lut[v>255?255:v|0]}
-  octx.putImageData(IMG,0,0);
-  ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(off,0,0,cv.width,cv.height);
+  if(!ED)return;
+  PF++;
+  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(bgC,0,0);
+  if(rootsDirty){drawRoots();rootsDirty=false}
   ctx.setTransform(DPR,0,0,DPR,0,0);
-  var bg=cvar("--bg"), focus=dragN||hov||sel;
-  ctx.font="11px "+FONT;ctx.textBaseline="middle";
-  NODES.forEach(function(nd){
-    var act=nd===focus;
-    /* a little paper under each note so it reads over the veins */
-    ctx.fillStyle=bg;ctx.globalAlpha=0.78;ctx.beginPath();ctx.arc(nd.px,nd.py,11,0,6.283);ctx.fill();ctx.globalAlpha=1;
-    drawNode(ctx,nd.px,nd.py,nd.status,act,nd.id,1);
-    var lab=act?nd.label:nd.label.split(/ & |, /)[0], tw=ctx.measureText(lab).width;
-    var right=nd.px+18+tw<W-8, lx=right?nd.px+18:nd.px-18-tw;
-    ctx.fillStyle=bg;ctx.globalAlpha=0.82;ctx.fillRect(lx-4,nd.py-9,tw+8,18);ctx.globalAlpha=1;
-    ctx.fillStyle=act?cvar("--ember"):cvar("--dim");ctx.textAlign="left";ctx.fillText(lab,lx,nd.py+0.5);
+  if(PF%30===1||!run)trails();
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(trail,0,0,TW,TH,0,0,TW*4,TH*4);
+  var i;
+  for(i=0;i<drops.length;i++){var w=drops[i],age=T-w.t0,rad=Math.min(26,6+age*14),al=Math.min(1,w.life/6);
+    var wg=ctx.createRadialGradient(w.x,w.y,0,w.x,w.y,rad);wg.addColorStop(0,"rgba(20,14,8,"+(0.42*al)+")");
+    wg.addColorStop(0.7,"rgba(20,14,8,"+(0.22*al)+")");wg.addColorStop(1,"rgba(20,14,8,0)");
+    ctx.fillStyle=wg;ctx.beginPath();ctx.arc(w.x,w.y,rad,0,6.283);ctx.fill();
+    ctx.fillStyle="rgba(190,220,255,"+(0.45*al)+")";ctx.beginPath();ctx.arc(w.x-rad*0.25,w.y-rad*0.3,1.6,0,6.283);ctx.fill()}
+  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(rootC,0,0);ctx.setTransform(DPR,0,0,DPR,0,0);
+  threads();
+  var focus=dragN||hov||sel;
+  if(focus){var fe=feeds(focus);if(fe.length){ctx.lineWidth=2.6;ctx.strokeStyle=PAL.ember;ctx.globalAlpha=0.85;ctx.beginPath();
+    for(i=0;i<fe.length;i++){var e=fe[i];ctx.moveTo(NX[EA[e]],NY[EA[e]]);ctx.quadraticCurveTo(CX[e],CY[e],NX[EB[e]],NY[EB[e]])}ctx.stroke();ctx.globalAlpha=1}}
+  ctx.fillStyle=PAL.dark?"rgba(220,255,225,0.85)":"rgba(255,253,240,0.95)";
+  for(i=0;i<grains.length;i++){var g=grains[i],e2=g.e,s=g.s,u=1-s,
+    x=u*u*NX[EA[e2]]+2*u*s*CX[e2]+s*s*NX[EB[e2]],y=u*u*NY[EA[e2]]+2*u*s*CY[e2]+s*s*NY[EB[e2]];
+    ctx.fillRect(x-1,y-1,2,2)}
+  /* plants, then their labels; a label that would run into its neighbour steps up a line */
+  var linked={};if(focus)L.forEach(function(l){if(l[0]===focus)linked[l[1].id]=1;if(l[1]===focus)linked[l[0].id]=1});
+  NODES.forEach(function(nd){drawPlant(ctx,nd.px,nd.py,nd.status,nd.hh,nd===focus,false,1)});
+  ctx.font="11px "+FONT;ctx.textBaseline="middle";ctx.textAlign="left";
+  var boxes=[];
+  NODES.slice().sort(function(a,b){return a.px-b.px}).forEach(function(nd){
+    var act=nd===focus,lab=act?nd.label:nd.label.split(/ & |, /)[0];
+    if(!act&&W<700)lab=lab.split(" ")[0];
+    var tw=ctx.measureText(lab).width;
+    var lx=clampN(nd.px-tw/2,6,W-6-tw),ly=nd.py-stalk(nd)-(nd.status==="seed"?20:16);
+    for(var tries=0;tries<4;tries++){var hit=false;
+      for(var j=0;j<boxes.length;j++){var bx=boxes[j];if(lx<bx.x+bx.w+8&&lx+tw+8>bx.x&&Math.abs(ly-bx.y)<16){hit=true;break}}
+      if(!hit)break;ly-=17}
+    boxes.push({x:lx,y:ly,w:tw});
+    ctx.fillStyle=PAL.page;ctx.globalAlpha=0.86;ctx.fillRect(lx-4,ly-9,tw+8,18);ctx.globalAlpha=1;
+    ctx.fillStyle=act||linked[nd.id]?PAL.ember:PAL.dim;ctx.fillText(lab,lx,ly+0.5);
   });
 }
 
 function frame(now){
   if(!run)return;
-  var t0=performance.now(), steps=T<3?2:1;
-  for(var s=0;s<steps;s++)step();
+  step(1/60);if(T<2)step(1/60);
   paint();
-  /* if this machine is struggling, thin the mould rather than drop frames */
-  cost=cost*0.95+(performance.now()-t0)*0.05;
-  if(T>4&&cost>24&&NA>4000){NA=Math.floor(NA*0.85);cost=14}
   requestAnimationFrame(frame);
 }
 function go(){var on=vis&&!doc.hidden&&!reduced;
-  if(on&&!run){run=true;last=performance.now();requestAnimationFrame(frame)}
+  if(on&&!run){run=true;requestAnimationFrame(frame)}
   else if(!on)run=false}
 new IntersectionObserver(function(en){vis=en[0].isIntersecting;go()}).observe(cv);
 doc.addEventListener("visibilitychange",go);
 /* select() and the theme toggle call render(); with the loop running the next
    frame picks the change up, otherwise paint it now */
 function render(){if(!run)paint()}
-function grow(){for(var i=0;i<260;i++)step()}
+/* reduced motion, or a fresh layout: grow it to a settled network offline, in
+   coarse steps */
+function grow(){for(var i=0;i<420;i++)step(1/20)}
 
-/* pointer: hover a note to feed it, drag it to re-route the network, click it
-   to read; click open ground to drop a crumb */
+/* pointer: hover a plant to see what it feeds, drag it along the soil to re-route,
+   click it to read; click the soil to water it */
 function local(e){var r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
-function nodeAt(p){var best=null,bd=22*22;
-  NODES.forEach(function(n){var dx=n.px-p.x,dy=n.py-p.y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=n}});return best}
+function plantAt(p){var best=null,bd=1e9;
+  NODES.forEach(function(n){var dx=Math.abs(p.x-n.px);
+    if(dx<22&&p.y>n.py-stalk(n)-26&&p.y<n.py+16&&dx<bd){bd=dx;best=n}});return best}
+function nearest2(x,y){return NODES.slice().sort(function(a,b){
+  return Math.hypot(a.px-x,a.ry-y)-Math.hypot(b.px-x,b.ry-y)}).slice(0,2)}
 cv.addEventListener("pointerdown",function(e){
-  var p=local(e),n=nodeAt(p);down={x:p.x,y:p.y,n:n,moved:false};
-  if(n){dragN=n;try{cv.setPointerCapture(e.pointerId)}catch(err){}}
+  var p=local(e),n=plantAt(p);down={x:p.x,y:p.y,n:n,moved:false};
+  if(n){dragN=n;cv.style.cursor="grabbing";try{cv.setPointerCapture(e.pointerId)}catch(err){}}
 });
 cv.addEventListener("pointermove",function(e){
   var p=local(e);
+  if(e.pointerType==="mouse"){if(lastMX!==null&&p.y<GY+8)breeze=Math.min(1.6,breeze+Math.abs(p.x-lastMX)*0.006);lastMX=p.x}
   if(dragN&&down){
     if(Math.abs(p.x-down.x)+Math.abs(p.y-down.y)>5)down.moved=true;
-    if(down.moved){dragN.px=clampN(p.x,14,W-14);dragN.py=clampN(p.y,14,H-14);render()}
+    if(down.moved){dragN.px=clampN(p.x,20,W-20);dragN.py=soilY(dragN.px);dragN.placed=true;rootsDirty=true;
+      var c=cellAt(dragN.px,dragN.ry);if(c!==dragN.cell){dragN.cell=c;attract()}render()}
     return;
   }
-  var h=nodeAt(p);if(h!==hov){hov=h;cv.style.cursor=h?"grab":"crosshair";render()}
+  var h=plantAt(p);if(h!==hov){hov=h;render()}
+  cv.style.cursor=h?"grab":"";
 });
 cv.addEventListener("pointerup",function(e){
-  var p=local(e),d=down;down=null;dragN=null;
+  var p=local(e),d=down;down=null;dragN=null;cv.style.cursor=hov?"grab":"";
   if(!d)return;
   if(d.n&&!d.moved){select(d.n,true);try{history.replaceState(null,"","#"+d.n.id)}catch(err){}return}
   if(!d.n&&Math.abs(p.x-d.x)+Math.abs(p.y-d.y)<6){
     if(drawer.classList.contains("open"))closeDrawer();
-    crumbs.push({x:p.x,y:p.y,life:9});
-    if(reduced){grow();paint()}
+    if(p.y>GY+10){drops.push({x:p.x,y:p.y,t0:T,life:18,cell:cellAt(p.x,p.y),near:nearest2(p.x,p.y)});
+      commodities();attract();if(reduced){grow();paint()}}
   }
 });
-cv.addEventListener("pointerleave",function(){if(hov&&!dragN){hov=null;cv.style.cursor="crosshair";render()}});
-/* phones: page scroll stays free on open ground; touching a note claims the
+cv.addEventListener("pointerleave",function(){lastMX=null;if(hov&&!dragN){hov=null;cv.style.cursor=""}render()});
+/* phones: page scroll stays free on open ground; touching a plant claims the
    gesture so it can be dragged */
 cv.addEventListener("touchstart",function(e){var t=e.touches[0],r=cv.getBoundingClientRect();
-  if(nodeAt({x:t.clientX-r.left,y:t.clientY-r.top}))e.preventDefault()},{passive:false});
+  if(plantAt({x:t.clientX-r.left,y:t.clientY-r.top}))e.preventDefault()},{passive:false});
 
 function drawLegend(){
   qa(".lg").forEach(function(c2){
-    var dpr=Math.min(2,window.devicePixelRatio||1),S2=22;
+    var dpr=Math.min(2,window.devicePixelRatio||1),S2=22,s=c2.getAttribute("data-s");
     c2.width=S2*dpr;c2.height=S2*dpr;
     var c=c2.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,S2,S2);
-    drawNode(c,S2/2,S2/2,c2.getAttribute("data-s"),false,"legend",0.92);
+    if(s==="seed")drawPlant(c,11,12,s,hashId(s),false,true,1.05);
+    else if(s==="growing")drawPlant(c,11,21,s,hashId(s),false,true,0.46);
+    else drawPlant(c,11,21.5,s,hashId(s),false,true,0.3);
   });
 }
 function netStat(){
+  var v=0;for(var e=0;e<NE;e++)if(ED[e]>0.3)v++;
   q("#gstat").textContent=NODES.length+" notes · "+LINKS.length+" links · "+
-    Math.round(NA/1000)+"k agents · seed 42";
+    (v?v+" thread segments · grown from ":"growing from ")+home.label.split(/ & |, /)[0];
 }
 
 /* drawer */
@@ -654,7 +877,7 @@ themeBtn.addEventListener("click",function(){
   themeBtn.setAttribute("aria-pressed",light?"true":"false");
   q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
   try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){}
-  drawOrb();buildLUT();drawLegend();paint();
+  drawOrb();recolour();drawLegend();paint();
 });
 var clock=q("#clock");
 var fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",hour12:false});
@@ -719,7 +942,7 @@ window.addEventListener("resize",function(){clearTimeout(rsz);rsz=setTimeout(fun
 settle();init();if(reduced)grow();paint();netStat();setInterval(netStat,5000);
 var hintEl=q(".hint");
 if(hintEl&&window.matchMedia("(hover: none)").matches)
-  hintEl.textContent="# tap a note to read it · tap open ground to drop a crumb";
+  hintEl.textContent="# each note is a plant; the threads under the soil are its links · tap one to read it · tap the soil to water it";
 buildRows();drawOrb();drawLegend();fromHash();
 if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(function(){FONT=cvar("--mono");render();drawOrb();drawLegend()}).catch(function(){})}
 })();
