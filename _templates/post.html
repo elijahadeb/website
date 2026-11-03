@@ -73,10 +73,10 @@ header.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1
   transform:scaleX(0);transform-origin:0 50%;pointer-events:none}
 header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;display:flex;
   align-items:baseline;justify-content:space-between;gap:12px}
-.crumb{font-size:.85rem}
+.crumb{font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .crumb a{text-decoration:none}.crumb .sep{color:var(--mute);padding:0 6px}
 .crumb .here{color:var(--dim)}
-.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim);flex-shrink:0}
 #clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
 article{max-width:var(--w);margin-inline:auto;padding:56px 20px 30px}
 h1{font-size:clamp(1.4rem,3.4vw,1.9rem);font-weight:800;line-height:1.35;margin:0}
@@ -134,7 +134,9 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
 .tk{animation:tk 2s steps(1) infinite}
 @keyframes tk{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.cur,.tk{animation:none}.fnav .arw,.fnav .arw-u{transition:none}}
-@media (max-width:640px){.tick{display:none}
+@media (max-width:420px){#clock{display:none}}
+@media (max-width:640px){.tick{display:none}.colo{font-size:12px}
+  .crumb a{display:inline-block;padding:12px 0;margin:-12px 0}
   .laws li{grid-template-columns:1fr}.fnav .totop{margin-left:0}}
 </style>
 </head>

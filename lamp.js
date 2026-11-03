@@ -38,7 +38,7 @@ var coarse=matchMedia("(hover: none)").matches;
 var hero=opt.hero||cv.parentNode,ctx=cv.getContext("2d",{alpha:false});
 var hintEl=opt.hint||null,pinEl=opt.pin||null,clearEl=opt.clear||null,copyR=0;
 var W=0,H=0,DPR=1,CW=8,CH=12,COLS=0,ROWS=0,T=0,FONT="monospace";
-var tex=doc.createElement("canvas"),zones=[];
+var tex=doc.createElement("canvas"),zones=[],stage=false;
 var P=null,caughtN=0;
 
 function clamp(v,a,b){return v<a?a:v>b?b:v}
@@ -55,12 +55,15 @@ function segDist(x,y,ax,ay,bx,by){var dx=bx-ax,dy=by-ay,t=clamp(((x-ax)*dx+(y-ay
 /* night, and a cream daytime version of the same wall. the wall has a colour of
    its own (albedo); the light is multiplied into it every frame. moths are
    nocturnal: by day most of them sit on the wall until the bulb comes close. */
+function pageColor(){var v=getComputedStyle(root).getPropertyValue("--bg").trim(),m=/^#([0-9a-f]{6})$/i.exec(v);
+  return m?[parseInt(m[1].slice(0,2),16),parseInt(m[1].slice(2,4),16),parseInt(m[1].slice(4,6),16)]:null}
 function palette(){
   var dark=root.getAttribute("data-theme")==="dark";
   P=dark?{dark:true,day:false,wall:[196,190,178],amb:[0.056,0.062,0.08],e0:0.45,warm:[1,0.8,0.58],shadow:0.92,glare:1,
       fill:1,ex:2,grain:"rgba(38,30,22,1)",cord:[150,144,132],specks:[180,172,158]}
     :{dark:false,day:true,wall:[249,247,240],amb:[0.93,0.93,0.92],e0:0.14,warm:[1,0.8,0.58],shadow:0.32,glare:0.5,
       fill:1,ex:2,grain:"rgba(60,52,44,1)",cord:[60,56,52],specks:[40,34,30]};
+  P.page=pageColor();
 }
 
 /* wing outlines in units of the half-span: u runs tail to head, v from the body out.
@@ -199,10 +202,10 @@ function sampleWing(m,q,u,v){
    positions across that window and the renderer averages them: dense where the wing
    dwells (the ends of the stroke), faint where it moves fastest. a resting or gliding
    moth gets one pose and stays sharp. */
-var TAU=1/30;
+var TAU=1/30,KMAX=7;
 function poses(m){
   var sp=m.sp,K=1,span=0,PS=m.P,jit=Math.random(),o=m.open,r=sp.rest;
-  if(m.flapping){span=6.2832*m.hzNow*TAU;K=clamp(Math.ceil(span/0.8),1,7)}
+  if(m.flapping){span=6.2832*m.hzNow*TAU;K=clamp(Math.ceil(span/0.8),1,KMAX)}
   var roll=Math.abs(Math.cos(m.roll)),bk=m.bank;
   for(var k=0;k<K;k++){
     var ph=m.ph-(K>1?span*(k+jit)/K:0),el=m.amp*Math.sin(ph);
@@ -223,10 +226,10 @@ function poses(m){
 var lamp={x:0,y:0,z:600,vx:0,vy:0,ax:0,ay:-6,L:200,Lr:200,th:0,om:0,held:false,I:1,flare:0,tick:0,px:0,py:0,rb:30};
 function lampRest(){
   var margin=W-copyR;
-  lamp.ax=W<700?W*0.72:margin>300?copyR+margin*0.42:W*0.86;lamp.Lr=H*(W<700?0.2:0.4);
+  lamp.ax=W<700?W*0.66:margin>300?copyR+margin*0.42:W*0.86;lamp.Lr=H*(W<700?0.3:0.4);
   /* how far the bulb hangs in front of the wall: far enough to light all of it */
   lamp.z=Math.max(W,H*1.2)*0.42;lamp.rb=clamp(Math.min(W,H)*0.045,16,40)}
-function lampInit(){lampRest();lamp.L=lamp.Lr;lamp.th=0.35;lamp.om=0;
+function lampInit(){lampRest();lamp.L=lamp.Lr;lamp.th=0.12;lamp.om=0;
   lamp.x=lamp.ax+Math.sin(lamp.th)*lamp.L;lamp.y=lamp.ay+Math.cos(lamp.th)*lamp.L}
 function lampStep(dt){
   if(lamp.held){
@@ -402,11 +405,12 @@ function size(){
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
   CW=clamp(Math.round(W/190),5,8);CH=Math.round(CW*1.6);COLS=Math.ceil(W/CW);ROWS=Math.ceil(H/CH);
   FONT=getComputedStyle(cv).fontFamily;
+  stage=H<hero.getBoundingClientRect().height-4;
   var wr=(clearEl||hero).getBoundingClientRect();copyR=wr.right-r.left;
   /* the copy, block by block, so moths can still land in the gaps around it */
   zones=(opt.keep||[]).map(function(e){var b=e.getBoundingClientRect();
     return {x0:b.left-r.left,x1:b.right-r.left,y0:b.top-r.top,y1:b.bottom-r.top}});
-  cellsAlloc();shapesBuild();
+  cellsAlloc();shapesBuild();litKey="";
   /* the wall's own colour and its plaster grain; the light is multiplied in each frame,
      so the grain only shows where the bulb rakes across it */
   tex.width=cv.width;tex.height=cv.height;
@@ -457,14 +461,18 @@ function flushQ(c){
    (2 x 3 per cell), scaled up smoothly, so silhouettes stay round instead of
    stepping. on top, one glyph per cell; a nearer moth's cell replaces a farther one's. */
 var subCv=doc.createElement("canvas"),subCtx=subCv.getContext("2d"),subImg=null,subPix=null,SW=0,SHh=0;
-var gChar=null,gKey=null,gCov=null,touched=null,stampA=null,nT=0,frameN=1;
+var gChar=null,gKey=null,gCov=null,touched=null,stampA=null,nT=0,frameN=1,DX0=0,DX1=-1,DY0=0,DY1=-1;
 function cellsAlloc(){
   var n=COLS*ROWS;SW=COLS*2;SHh=ROWS*3;subCv.width=SW;subCv.height=SHh;subImg=subCtx.createImageData(SW,SHh);
   subPix=new Uint32Array(subImg.data.buffer);gChar=new Array(n);gKey=new Int32Array(n);gCov=new Float32Array(n);
   touched=new Int32Array(n);stampA=new Uint32Array(n);
 }
-function cellsBegin(){subPix.fill(0);nT=0;frameN++}
+function cellsBegin(){
+  /* clear only what the last layer used */
+  if(DX1>=DX0)for(var y=DY0;y<=DY1;y++)subPix.fill(0,y*SW+DX0,y*SW+DX1+1);
+  nT=0;frameN++;DX0=SW;DX1=-1;DY0=SHh;DY1=-1}
 function subFill(x,y,r,g,b,a){if(x<0||y<0||x>=SW||y>=SHh)return;
+  if(x<DX0)DX0=x;if(x>DX1)DX1=x;if(y<DY0)DY0=y;if(y>DY1)DY1=y;
   r=r>255?255:r<0?0:r;g=g>255?255:g<0?0:g;b=b>255?255:b<0?0:b;
   subPix[y*SW+x]=(((a>1?255:a*255)|0)<<24)|((b|0)<<16)|((g|0)<<8)|(r|0)}
 function cellGlyph(i,ch,k,cov){
@@ -472,9 +480,11 @@ function cellGlyph(i,ch,k,cov){
   else if(cov<gCov[i]*0.6)return;   /* a faint edge doesn't knock out a solid cell behind it */
   gChar[i]=ch;gKey[i]=k;gCov[i]=cov}
 function cellsFlush(){
-  subCtx.putImageData(subImg,0,0);
-  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
-  ctx.drawImage(subCv,0,0,SW,SHh,0,0,COLS*CW,ROWS*CH);
+  if(DX1>=DX0){
+    var x0=Math.max(0,DX0-1),y0=Math.max(0,DY0-1),x1=Math.min(SW-1,DX1+1),y1=Math.min(SHh-1,DY1+1),w=x1-x0+1,h=y1-y0+1;
+    subCtx.putImageData(subImg,0,0,x0,y0,w,h);
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="low";
+    ctx.drawImage(subCv,x0,y0,w,h,x0*CW/2,y0*CH/3,w*CW/2,h*CH/3)}
   for(var j=0;j<nT;j++){var i=touched[j];if(gChar[i]!==" ")qglyph(gKey[i],(i%COLS)*CW+CW/2,((i/COLS)|0)*CH+CH/2+1,gChar[i])}
   flushQ();
 }
@@ -587,12 +597,12 @@ function drawShadow(m){
     Ss=m.S*0.75;b=2.5+z*0.22;sx=m.x+2+z*0.35;sy=m.y+3+z*0.5;alpha=0.3*m.fade*(1-smooth(20,170,z));
   }else{
     if(z>=zL-8)return;
-    M=zL/(zL-z);if(M>12)return;
+    var mM=W<700?7:12;M=zL/(zL-z);if(M>mM)return;
     Ss=m.S*0.75*M;b=lamp.rb*0.28*z/(zL-z);   /* a clear bulb: the filament is the source */
     sx=lamp.x+(m.x-lamp.x)*M;sy=lamp.y+(m.y-lamp.y)*M;
     /* a shadow only takes away the bulb's share of the light there, not the room's */
     var dirE=1-Math.exp(-Ewall(Math.hypot(sx-lamp.x,sy-lamp.y))*P.ex),share=dirE/(dirE+P.amb[1]);
-    alpha=share*P.shadow*m.fade/(1+Math.pow(b/(Ss*0.45),2))*(1-smooth(7,12,M));
+    alpha=share*P.shadow*m.fade/(1+Math.pow(b/(Ss*0.45),2))*(1-smooth(mM*0.6,mM,M));
   }
   var ext=Ss*1.6+b;if(sx+ext<0||sx-ext>W||sy+ext<0||sy-ext>H)return;
   if(alpha<0.01)return;
@@ -615,15 +625,25 @@ function drawShadow(m){
 }
 
 /* ---- the wall, the cord, the bulb, the glare ---- */
+/* the lit wall is kept between frames and redrawn only when the bulb has moved a few
+   pixels or flared; the light falls off too smoothly for a 3 px step to show. the
+   filament's hum shows on the bulb and the moths, not on the wall */
+var litC=doc.createElement("canvas"),litKey="";
 function drawWall(){
-  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(tex,0,0);ctx.setTransform(DPR,0,0,DPR,0,0);
-  /* the light on the wall, multiplied into its colour: room light plus the bulb's */
-  var rMax=Math.hypot(Math.max(lamp.x,W-lamp.x),Math.max(lamp.y,H-lamp.y))+20;
-  var g=ctx.createRadialGradient(lamp.x,lamp.y,0,lamp.x,lamp.y,rMax),am=P.amb,wm=P.warm;
-  for(var i=0;i<=12;i++){var t=i/12,d=1-Math.exp(-Ewall(rMax*t*t)*P.ex);
-    g.addColorStop(t*t,"rgb("+Math.round(clamp(am[0]+d*wm[0],0,1)*255)+","+Math.round(clamp(am[1]+d*wm[1],0,1)*255)+","+
-      Math.round(clamp(am[2]+d*wm[2],0,1)*255)+")")}
-  ctx.globalCompositeOperation="multiply";ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation="source-over";
+  var I=1+lamp.flare*0.9,key=Math.round(lamp.x/3)+","+Math.round(lamp.y/3)+","+Math.round(I*20)+","+cv.width+","+cv.height;
+  if(key!==litKey){litKey=key;
+    if(litC.width!==cv.width||litC.height!==cv.height){litC.width=cv.width;litC.height=cv.height}
+    var g0=litC.getContext("2d");g0.setTransform(1,0,0,1,0,0);g0.globalCompositeOperation="source-over";g0.drawImage(tex,0,0);
+    g0.setTransform(DPR,0,0,DPR,0,0);
+    /* the light on the wall, multiplied into its colour: room light plus the bulb's */
+    var rMax=Math.hypot(Math.max(lamp.x,W-lamp.x),Math.max(lamp.y,H-lamp.y))+20,keep=lamp.I;lamp.I=I;
+    var g=g0.createRadialGradient(lamp.x,lamp.y,0,lamp.x,lamp.y,rMax),am=P.amb,wm=P.warm;
+    for(var i=0;i<=12;i++){var t=i/12,d=1-Math.exp(-Ewall(rMax*t*t)*P.ex);
+      g.addColorStop(t*t,"rgb("+Math.round(clamp(am[0]+d*wm[0],0,1)*255)+","+Math.round(clamp(am[1]+d*wm[1],0,1)*255)+","+
+        Math.round(clamp(am[2]+d*wm[2],0,1)*255)+")")}
+    lamp.I=keep;
+    g0.globalCompositeOperation="multiply";g0.fillStyle=g;g0.fillRect(0,0,W,H);g0.globalCompositeOperation="source-over"}
+  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(litC,0,0);ctx.setTransform(DPR,0,0,DPR,0,0);
 }
 function drawCord(){
   var ax=lamp.ax,ay=0,bx=lamp.x,by=lamp.y-lamp.rb*1.95,dx=bx-ax,dy=by-ay,dd=Math.hypot(dx,dy)||1;
@@ -695,7 +715,7 @@ function render(){
     ctx.fillText(Math.sin(s.ph)>0.2?"v":Math.sin(s.ph)<-0.2?"^":"-",Math.floor(s.x/CW)*CW+CW/2,Math.floor(s.y/CH)*CH+CH/2+1)}
   ctx.globalAlpha=1;
   behind.sort(byZ);front.sort(byZ);
-  cellsBegin();for(i=0;i<behind.length;i++)drawMoth(behind[i]);cellsFlush();
+  for(i=0;i<behind.length;i++){cellsBegin();drawMoth(behind[i]);cellsFlush()}
   /* scale dust, glinting as it falls through the light */
   for(i=0;i<dust.length;i++){var d=dust[i],Ld=lightAt(d.x,d.y);
     ctx.globalAlpha=clamp((1-d.age/d.life)*(0.1+Ld*0.9),0,1);
@@ -703,11 +723,14 @@ function render(){
     ctx.fillText(Ld>0.6&&Math.sin(d.ph+T*9)>0.6?"*":".",Math.floor(d.x/CW)*CW+CW/2,Math.floor(d.y/CH)*CH+CH/2+1)}
   ctx.globalAlpha=1;
   drawCord();drawBulb();
-  cellsBegin();for(i=0;i<front.length;i++)drawMoth(front[i]);cellsFlush();
+  for(i=0;i<front.length;i++){cellsBegin();drawMoth(front[i]);cellsFlush()}
   var occl=0;for(i=0;i<front.length;i++){m=front[i];
     occl+=clamp(1-Math.hypot(m.x-lamp.x,m.y-lamp.y)/(m.S*depthScale(m.z)*0.5+lamp.rb*0.5),0,1)*0.5}
   drawGlare(Math.min(0.5,occl));
-  if(caught.length){cellsBegin();for(i=0;i<caught.length;i++)drawMoth(caught[i]);cellsFlush()}
+  for(i=0;i<caught.length;i++){cellsBegin();drawMoth(caught[i]);cellsFlush()}
+  if(stage&&P.page){var fh=H*0.16,fg=ctx.createLinearGradient(0,H-fh,0,H),pc=P.page;
+    fg.addColorStop(0,"rgba("+pc[0]+","+pc[1]+","+pc[2]+",0)");fg.addColorStop(1,"rgb("+pc[0]+","+pc[1]+","+pc[2]+")");
+    ctx.fillStyle=fg;ctx.fillRect(0,H-fh,W,fh)}
 }
 function step(dt){
   T+=dt;lampStep(dt);
@@ -722,56 +745,83 @@ function step(dt){
 
 
 /* ---- pointer: grab the bulb and drag it; click a moth to catch it ---- */
-var drag=null;
+var drag=null,tap=null;
 function local(e){var r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+function inside(p){return p.x>=0&&p.y>=0&&p.x<=W&&p.y<=H}
 /* the glass and its socket, with a little slack for fingers */
 function onBulb(p,slack){var dx=p.x-lamp.x,dy=p.y-(lamp.y-lamp.rb*0.45);return dx*dx+dy*dy*0.45<lamp.rb*lamp.rb*2.1*slack*slack}
-function mothAt(p){var best=null,bd=1e9;
+function mothAt(p,slack){var best=null,bd=1e9;
   for(var i=0;i<moths.length;i++){var m=moths[i];if(m.mode==="caught")continue;
-    var d=Math.hypot(m.x-p.x,m.y-p.y);if(d<Math.max(16,m.S*depthScale(m.z)*0.75)&&d<bd){bd=d;best=m}}
+    var d=Math.hypot(m.x-p.x,m.y-p.y);if(d<Math.max(16,m.S*depthScale(m.z)*0.75)*(slack||1)&&d<bd){bd=d;best=m}}
   return best}
 function isUi(e){return e.target.closest&&e.target.closest("a,button")}
-hero.addEventListener("pointermove",function(e){
-  var p=local(e);
-  if(drag!==null){lamp.px=p.x;lamp.py=p.y;if(reduced){lamp.x=p.x;lamp.y=p.y;render()}return}
-  if(e.pointerType!=="mouse")return;
-  hero.style.cursor=isUi(e)?"":onBulb(p,1)?"grab":mothAt(p)?"pointer":"";
-});
-hero.addEventListener("pointerdown",function(e){
-  if(e.button>0||isUi(e))return;
-  var p=local(e),i;
-  if(onBulb(p,e.pointerType==="mouse"?1:1.5)){
-    drag=e.pointerId;lamp.held=true;lamp.px=p.x;lamp.py=p.y;hero.classList.add("drag");hero.style.cursor="";
-    try{hero.setPointerCapture(e.pointerId)}catch(x){}
-    e.preventDefault();return}
-  var best=mothAt(p);
-  if(best){best.mode="caught";best.ct=0;best.tumble=0;best.rollV=0;best.roll=0;caughtN++;
-    if(hintEl)hintEl.textContent="bugs caught: "+caughtN+" · taped into the log";
-    if(pinEl){pinEl.style.left=clamp(best.x+best.S*0.9,8,W-280)+"px";pinEl.style.top=clamp(best.y-10,8,H-30)+"px";
-      pinEl.style.opacity=1;clearTimeout(pinEl.t);pinEl.t=setTimeout(function(){pinEl.style.opacity=0},4200)}
-    if(reduced)render();return}
-  /* open wall: the filament flares and everyone scatters; the resting ones have to warm up first */
+function catchMoth(best){
+  best.mode="caught";best.ct=0;best.tumble=0;best.rollV=0;best.roll=0;caughtN++;
+  if(hintEl)hintEl.textContent="bugs caught: "+caughtN+" · taped into the log";
+  if(pinEl){pinEl.style.left=clamp(best.x+best.S*0.9,8,Math.max(8,W-280))+"px";pinEl.style.top=clamp(best.y-10,8,H-30)+"px";
+    pinEl.style.opacity=1;clearTimeout(pinEl.t);pinEl.t=setTimeout(function(){pinEl.style.opacity=0},4200)}
+  if(reduced)render();
+}
+/* open wall: the filament flares and everyone scatters; the resting ones have to warm up first */
+function flare(){
   lamp.flare=1;
-  for(i=0;i<moths.length;i++){var q=moths[i];if(q.mode==="caught"||q.mode==="warm")continue;
+  for(var i=0;i<moths.length;i++){var q=moths[i];if(q.mode==="caught"||q.mode==="warm")continue;
     if(Math.hypot(q.x-lamp.x,q.y-lamp.y)<320){
       if(q.mode==="rest"){warmUp(q,true);continue}
       if(q.mode==="land"){q.mode="fly";q.energy=rnd(6,12)}
       q.h=Math.atan2(q.y-lamp.y,q.x-lamp.x)+rnd(-0.5,0.5);q.stall=0;q.side=-q.side}}
+}
+hero.addEventListener("pointermove",function(e){
+  var p=local(e);
+  if(drag!==null){lamp.px=p.x;lamp.py=p.y;if(reduced){lamp.x=p.x;lamp.y=p.y;render()}return}
+  if(tap&&e.pointerId===tap.id&&Math.hypot(p.x-tap.x,p.y-tap.y)>12)tap=null;
+  if(e.pointerType!=="mouse")return;
+  hero.style.cursor=isUi(e)||!inside(p)?"":onBulb(p,1)?"grab":mothAt(p)?"pointer":"";
+});
+hero.addEventListener("pointerdown",function(e){
+  if(e.button>0||isUi(e))return;
+  var p=local(e);if(!inside(p))return;
+  if(onBulb(p,e.pointerType==="mouse"?1:1.5)){
+    drag=e.pointerId;lamp.held=true;lamp.px=p.x;lamp.py=p.y;hero.classList.add("drag");hero.style.cursor="";
+    try{hero.setPointerCapture(e.pointerId)}catch(x){}
+    e.preventDefault();return}
+  /* a mouse acts at once. a finger might be starting a scroll, so it only counts as a
+     tap if it lifts again soon without moving */
+  if(e.pointerType==="mouse"){var best=mothAt(p);if(best)catchMoth(best);else flare();return}
+  tap={id:e.pointerId,x:p.x,y:p.y,t:performance.now(),m:mothAt(p,1.3)};
+});
+hero.addEventListener("pointerup",function(e){
+  if(drag!==null){endDrag(e);return}
+  var t=tap;tap=null;
+  if(!t||e.pointerId!==t.id||performance.now()-t.t>600)return;
+  if(t.m&&t.m.mode!=="caught"&&Math.hypot(t.m.x-t.x,t.m.y-t.y)<Math.max(24,t.m.S*depthScale(t.m.z)))catchMoth(t.m);
+  else flare();
 });
 function endDrag(e){if(drag===null||(e&&e.pointerId!==drag))return;drag=null;hero.classList.remove("drag");
   if(reduced){lamp.held=false;return}release()}
-hero.addEventListener("pointerup",endDrag);hero.addEventListener("pointercancel",endDrag);
+hero.addEventListener("pointercancel",function(e){tap=null;endDrag(e)});
 hero.addEventListener("lostpointercapture",endDrag);
 /* a touch that starts on the bulb drags it instead of scrolling the page */
 hero.addEventListener("touchstart",function(e){var t=e.touches[0];if(!t)return;var r=cv.getBoundingClientRect();
   if(onBulb({x:t.clientX-r.left,y:t.clientY-r.top},1.5))e.preventDefault()},{passive:false});
 
-/* ---- loop ---- */
-var run=false,vis=false,last=0,acc=0,STEP=1/60;
+/* ---- loop ----
+   the drawing adapts to the device. it watches the time between frames: a phone that
+   can't keep up first loses some of the wing blur, then draws every other frame
+   (the flight itself still steps every frame, so the motion stays true) */
+var run=false,vis=false,last=0,acc=0,STEP=1/60,ft=16.7,QL=2,qT=-2,ups=0,sinceDrop=99,odd=0;
+function setQ(q){QL=q;KMAX=q>=2?7:q===1?3:2}
 function frame(now){if(!run)return;var dt=Math.min(0.1,(now-last)/1000);last=now;acc+=dt;var n=0;
-  while(acc>=STEP&&n<4){step(STEP);acc-=STEP;n++}if(n===4)acc=0;render();requestAnimationFrame(frame)}
+  while(acc>=STEP&&n<4){step(STEP);acc-=STEP;n++}if(n===4)acc=0;
+  if(dt>0&&dt<0.25)ft+=(dt*1000-ft)*0.04;
+  qT+=dt;sinceDrop+=dt;
+  if(qT>1.5){qT=0;
+    if(QL>0&&ft>(QL===1?30:24)){setQ(QL-1);ft=16.7;sinceDrop=0}
+    else if(QL<2&&ups<1&&sinceDrop>5&&ft<17.5){setQ(QL+1);ups++;ft=16.7}}
+  if(QL>0||(odd^=1))render();
+  requestAnimationFrame(frame)}
 function go(){var on=vis&&!doc.hidden&&!reduced;
-  if(on&&!run){run=true;last=performance.now();requestAnimationFrame(frame)}else if(!on)run=false}
+  if(on&&!run){run=true;last=performance.now();qT=-1;requestAnimationFrame(frame)}else if(!on)run=false}
 function still(){for(var i=0;i<240;i++)step(STEP);render()}
 palette();size();lampInit();seedAll();if(reduced)still();
 new IntersectionObserver(function(en){vis=en[0].isIntersecting;go()}).observe(cv);

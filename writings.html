@@ -68,10 +68,10 @@ button:hover{color:var(--ember)}
 header.top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
 header.top .bar{max-width:var(--w);margin-inline:auto;padding:10px 20px;display:flex;
   align-items:baseline;justify-content:space-between;gap:12px}
-.crumb{font-size:.85rem}
+.crumb{font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .crumb a{text-decoration:none}.crumb .sep{color:var(--mute);padding:0 6px}
 .crumb .here{color:var(--dim)}
-.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim)}
+.hud{display:flex;gap:16px;align-items:baseline;font-size:.78rem;color:var(--dim);flex-shrink:0}
 #clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
 main{max-width:var(--w);margin-inline:auto;padding:56px 20px 30px}
 h1{margin:0;font-weight:800;letter-spacing:.01em;font-size:clamp(1.3rem,3vw,1.7rem)}
@@ -172,7 +172,9 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
 .tk{animation:tk 2s steps(1) infinite}
 @keyframes tk{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.cur,.tk{animation:none}.fnav .arw,.fnav .arw-u{transition:none}}
-@media (max-width:640px){.tick{display:none}.row{flex-wrap:wrap;gap:2px 18px}
+@media (max-width:420px){#clock{display:none}}
+@media (max-width:640px){.tick{display:none}.colo{font-size:12px}
+  .crumb a{display:inline-block;padding:12px 0;margin:-12px 0}.row{flex-wrap:wrap;gap:2px 18px}
   .laws li{grid-template-columns:1fr}.fnav .totop{margin-left:0}}
 </style>
 </head>

@@ -274,13 +274,27 @@ footer .wrap{padding-block:46px 40px}
   figure.icon{position:static;margin:0 0 16px}
   figure.icon img{max-width:118px;max-height:140px}
   .row{flex-wrap:wrap;gap:2px 18px}
+  /* the bench: the name on its own line, what it is under it */
+  #bench .row{display:block}
+  #bench .row .rd{display:block;white-space:normal;margin-top:3px}
   .tick{display:none}
-  .hud nav{display:none}
-  .hero{--hp:46px;min-height:0}
-  .veil{left:-14px;right:-14px;top:calc(var(--hp) - 18px);bottom:calc(var(--hp) - 18px);opacity:.55}
+  .hud,.hud nav{gap:14px}
+  .mark,.hud nav a{padding:12px 0;margin:-12px 0}
+  /* the hero on a phone: the bulb, the moths and the machine get a stage of their own
+     at the top, and the copy reads below it on plain ground. lamp.js fades the scene
+     into the page at its foot */
+  .hero{--hp:46px;--stage:clamp(300px,88vw,400px);display:block;min-height:0}
+  #moths{bottom:auto;height:var(--stage)}
+  .hero .wrap{padding-top:calc(var(--stage) + 8px);padding-bottom:52px}
+  .hero figure.icon{position:absolute;left:18px;top:calc(var(--stage) - 178px);margin:0}
+  .hero figure.icon img{max-width:104px;max-height:126px}
+  .veil{display:none}
   .mhint{right:18px}
   .laws li{grid-template-columns:1fr}
+  figure.icon figcaption,#ignlabel small,.colo,.mhint{font-size:12px}
 }
+/* narrow phones: the menu matters more than the clock */
+@media (max-width:420px){#clock{display:none}}
 </style>
 </head>
 <body id="top">
