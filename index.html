@@ -506,7 +506,7 @@ tickClock();setInterval(tickClock,30000);
 var DAYMS=86400000, TOTAL=365;
 function lagosDay(s){var p=s.split(".");return Date.UTC(2000+(+p[2]),p[0]-1,+p[1])-3600000}
 var START=lagosDay("08.31.26");
-var PAUSES=[["09.21.26","10.27.26"]];
+var PAUSES=[["09.21.26","11.02.26"]];
 var loggedDays=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
 var PZ=PAUSES.map(function(p){return [Math.round((lagosDay(p[0])-START)/DAYMS),
   Math.round((lagosDay(p[1])-START)/DAYMS)]});
