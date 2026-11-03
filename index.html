@@ -10,7 +10,7 @@
     4. PAUSES         — calendar ranges the clock was stopped (see the ignition block)
     5. fonts/         — JetBrains Mono, subset to used glyphs, with its OFL license.
                         the subset is printable ascii + latin-1 + ← → ↓ ↗ − – —, and
-                        the hero's ascii sea (ocean.js) only draws from that set.
+                        the hero's lamp (lamp.js) only draws from that set.
                         system mono is the fallback.
     6. icons          — icon-machine / icon-rig / icon-keys .webp live next to
                         this file; swap or add as hardware joins (see SITE-BRIEF.md)
@@ -132,24 +132,30 @@ a:hover .arw-l{transform:translateX(-6px)}
 a:hover .arw-u{transform:rotate(180deg) translateY(4px)}
 @media (prefers-reduced-motion:reduce){.arw,.arw-d,.arw-r,.arw-l,.arw-u{transition:none}}
 
-/* the hero sea — ocean.js draws an ascii ocean behind the intro (a port of
-   stackedlol/ascii-sharks). click anywhere that isn't a link and food drops in
-   at that spot. the veil is a soft fog behind the copy, so text beats fish. */
-.hero{position:relative;overflow:hidden;isolation:isolate;cursor:crosshair;
+/* the hero — lamp.js: a bare bulb hanging in front of the wall, and moths that fly
+   the way real ones do. grab the bulb and drag it; click a moth to catch it. the
+   veil is a soft fog behind the copy, so the text always beats the moths. */
+.hero{position:relative;overflow:hidden;isolation:isolate;
   display:flex;align-items:center;min-height:clamp(560px,84vh,920px);
   --hp:clamp(48px,8vh,96px)}
-.hero h1,.hero p{cursor:auto}
-#ocean{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;
+.hero.drag{cursor:grabbing;-webkit-user-select:none;user-select:none}
+#moths{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;
   font-family:var(--mono)}
 .hero .wrap{position:relative;z-index:1;width:100%;padding-block:var(--hp)}
 .hero figure.icon{top:calc(var(--hp) - 2px)}
 .veil{position:absolute;z-index:-1;left:184px;right:-28px;top:calc(var(--hp) - 26px);
-  bottom:calc(var(--hp) - 26px);background:var(--bg);opacity:.86;filter:blur(20px);
+  bottom:calc(var(--hp) - 26px);background:var(--bg);opacity:.66;filter:blur(24px);
   border-radius:48px;pointer-events:none}
 .hero h1,.hero p,.hero .links a,.hero figcaption{text-shadow:0 0 2px var(--bg),0 0 10px var(--bg)}
-.ohint{position:absolute;z-index:1;right:20px;bottom:12px;font-size:.7rem;
-  color:var(--mute);letter-spacing:.03em;pointer-events:none}
-.ohint::before{content:"# ";color:var(--faint)}
+.mhint{position:absolute;z-index:2;right:20px;bottom:12px;font-size:.7rem;
+  color:var(--mute);letter-spacing:.03em;pointer-events:none;text-shadow:0 0 6px var(--bg);
+  font-variant-numeric:tabular-nums}
+.mhint::before{content:"# ";color:var(--faint)}
+/* the logbook tag that appears next to a caught moth */
+.pin{position:absolute;z-index:3;pointer-events:none;font-size:.68rem;line-height:1.4;
+  background:var(--bg);border:1px solid var(--line);padding:3px 8px;white-space:nowrap;
+  opacity:0;transition:opacity .4s}
+.pin b{color:var(--ember);font-weight:800}
 
 /* wordmark band */
 .band{border-top:1px solid var(--line);position:relative}
@@ -279,7 +285,7 @@ footer .wrap{padding-block:46px 40px}
   .hud nav{display:none}
   .hero{--hp:46px;min-height:0}
   .veil{left:-14px;right:-14px;top:calc(var(--hp) - 18px);bottom:calc(var(--hp) - 18px);opacity:.55}
-  .ohint{right:18px}
+  .mhint{right:18px}
   .laws li{grid-template-columns:1fr}
   .fnav .totop{margin-left:0}
 }
@@ -305,9 +311,9 @@ footer .wrap{padding-block:46px 40px}
 
 <main>
 
-  <!-- 01 · hey — over an ascii sea (ocean.js). click the water to feed it -->
+  <!-- 01 · hey — a bulb, the wall, and moths (lamp.js). drag the bulb -->
   <section class="sec hero" id="hey">
-    <canvas id="ocean" aria-hidden="true"></canvas>
+    <canvas id="moths" aria-hidden="true"></canvas>
     <div class="wrap has-icon">
       <div class="veil" aria-hidden="true"></div>
       <figure class="icon">
@@ -327,7 +333,8 @@ footer .wrap{padding-block:46px 40px}
         <a href="#hi">email <span class="arw-d">↓</span></a>
       </div>
     </div>
-    <span class="ohint" id="ohint" aria-hidden="true">click anywhere to feed the fish</span>
+    <span class="mhint" id="mhint" aria-hidden="true"></span>
+    <span class="pin" id="pin" aria-hidden="true"><b>first actual case of bug being found.</b> &nbsp;09.09.47</span>
   </section>
 
   <!-- wordmark band: the x-banner, alive -->
@@ -460,7 +467,7 @@ footer .wrap{padding-block:46px 40px}
   </div>
 </footer>
 
-<script src="ocean.js"></script>
+<script src="lamp.js"></script>
 <script>
 (function(){
 "use strict";
@@ -487,7 +494,7 @@ themeBtn.addEventListener("click",function(){
   q('meta[name="theme-color"]').setAttribute("content",light?"#E8E6DF":"#0B0C0E");
   try{localStorage.setItem("ds-theme",light?"light":"dark")}catch(e){}
   bandColors();drawOrb();if(reduced)bandStatic();
-  if(sea)sea.setTheme(light?"light":"dark");
+  if(lamp)lamp.setTheme();
 });
 
 /* lagos clock — honest wherever it is viewed */
@@ -575,26 +582,12 @@ function ignite(){
 }
 ignite();setInterval(ignite,1000);
 
-/* the hero sea — ocean.js, a port of stackedlol/ascii-sharks. three sharks in
-   the water; the keep-clear zone is the intro copy, so they cruise the margins
-   and only cross the text when they smell food or chase prey. on a phone the
-   copy fills the hero, so the zone is dropped and the veil keeps text readable. */
-var sea=null, oceanEl=q("#ocean");
-if(oceanEl&&window.DSOcean){
-  var veil=q("#hey .veil"), narrow=window.innerWidth<700, oh=q("#ohint");
-  sea=new window.DSOcean(oceanEl,{
-    theme:root.getAttribute("data-theme")==="dark"?"dark":"light",
-    weight:800,
-    sharks:narrow?[{kind:"classic",size:1},{kind:"hammerhead",size:0.82}]
-      :[{kind:"hammerhead",size:1},{kind:"tiger",size:0.84},{kind:"classic",size:0.72}],
-    clearZone:function(){
-      if(window.innerWidth<700)return null;
-      var c=oceanEl.getBoundingClientRect(), r=veil.getBoundingClientRect();
-      return {x:r.left-c.left+r.width/2,y:r.top-c.top+r.height/2,rx:r.width*0.62,ry:r.height*0.66};
-    }
-  });
-  if(oh)oh.textContent=reduced?"":(coarse?"tap":"click")+" anywhere to feed the fish";
-}
+/* the hero — lamp.js. the bulb hangs in the margin beside the copy, and a moth
+   that lands keeps off every block of it */
+var lamp=null, mothsEl=q("#moths");
+if(mothsEl&&window.DSLamp)lamp=window.DSLamp(mothsEl,{hero:q("#hey"),hint:q("#mhint"),
+  pin:q("#pin"),clear:q("#hey .wrap"),keep:Array.prototype.filter.call(q("#hey .wrap").children,
+  function(el){return !el.classList.contains("veil")})});
 
 /* stipple sampler — a dot only exists where the source says so */
 function sample(w,h,step,draw,seed,base,emberP){
