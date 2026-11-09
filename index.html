@@ -529,8 +529,9 @@ function buildStrip(dayIdx){
     if(splice[i]&&i<dayIdx){
       var p=splice[i], m=doc.createElement("span"), a=lagosDay(p[0]), b=lagosDay(p[1]);
       m.className="cell pz";
-      m.title="clock paused "+p[0]+" → "+p[1]+" · "+(Math.round((b-a)/DAYMS)+1)+
-        " days not counted · year one now ends "+dstr(calOf(TOTAL-1));
+      var pn=Math.round((b-a)/DAYMS)+1;
+      m.title="clock paused "+p[0]+" → "+p[1]+" · "+pn+(pn===1?" day":" days")+
+        " not counted · year one now ends "+dstr(calOf(TOTAL-1));
       frag.appendChild(m);
     }
   }
