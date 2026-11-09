@@ -37,7 +37,14 @@ window.DS={
 {"d":18,"date":"09.17.26","msg":"rest"},
 {"d":19,"date":"09.18.26","msg":"did not ship. wrote out the full mental model of the gguf parser. cursor invariant, u64 length prefixes, logical elements vs physical bytes, block-based quantization, container layout and cache locality. also learnt a lot about the difference between std::map and std::flat_map both give you ordered keys. both give you log N lookup. same big-O. but wildly works differently.","x":"https://x.com/elijahadeb/status/2101351807041540269?s=20"},
 {"d":20,"date":"09.19.26","msg":"no code. grounded c++ foundations. tracked raw byte movement into memory, object vs address vs byte-level lens. reinterpret_cast hands read() a physical destination without mutating the base uint32_t. array decay on char[4]. quantization reality check: q4_K 256 logical elements do not equal 144 physical bytes. stopping syntax memorization to build a rebuildable mental model","x":"https://x.com/elijahadeb/status/2101796387201380706?s=20"},
-{"d":21,"date":"09.20.26","msg":"rest"}
+{"d":21,"date":"09.20.26","msg":"rest"},
+{"d":22,"date":"11.03.26","msg":"back after the pause. re-read the operating doc and the gguf parser where i left it. decided the engine gets hand-written from here: ai explains, never writes engine code. site: mobile pass on the hero, ten times faster on slow phones"},
+{"d":23,"date":"11.04.26","msg":"learned to read a model file byte by byte with od, a unix tool from the 1970s (-A d -t x1 -N 24 -w8). refreshed on where i left off: finishing the loader, and reading the code i already have"},
+{"d":24,"date":"11.05.26","msg":"no code. planned year one: q1 laid out as 59 working days, one verifiable number each. amendment 016 shifts the calendar 43 days for the pause, q1 now closes 01.16.27"},
+{"d":25,"date":"11.06.26","msg":"references set. llama.cpp pinned at 6c01da627, release, cpu-only, -march=native. llama 3.2 1b / 3.2 3b / 3.1 8b q4_k_m downloaded, sizes byte-exact. 1b weights start at byte 7,831,552 = 244,736 × 32, matches gguf_dump.py"},
+{"d":26,"date":"11.07.26","msg":"llama-bench baselines at 6c01da627, repack on, -r 5. 1b: tg128 29.73 tok/s (8t), pp512 107.90 (4t). 8b: tg128 5.24 (8t), pp512 17.08 (4t). generation flattens after 2 threads, prompt processing keeps scaling. predictions weren't written before the run, so nothing to grade","note":"the plan's research guessed 5–8 tok/s for the 1b. it does ~30. measure, don't trust"},
+{"d":27,"date":"11.08.26","msg":"rest"},
+{"d":28,"date":"11.09.26","msg":"no engine work, family came first. kv reader carries to tomorrow"}
 ],
 "gates":[
 {"title":"gate −1: three dot products and a number","page":"gate-minus-1.html","cmd":"$ make gate-minus-1 && ./gate-minus-1 a.f32 b.f32","status":"next","date":null}
