@@ -341,7 +341,7 @@ function mdy(t){var d=new Date(t);
 function pauseRow(h,next){
   var div=doc.createElement("div");div.className="hpause";
   var n=Math.round((day(h.to)-day(h.from))/86400000)+1;
-  div.textContent="— clock paused "+h.from+" → "+h.to+" · "+n+" days, not counted · day "+
+  div.textContent="— clock paused "+h.from+" → "+h.to+" · "+n+(n===1?" day":" days")+", not counted · day "+
     pad3(next)+" picks up "+mdy(day(h.to)+86400000)+" —";
   return div;
 }

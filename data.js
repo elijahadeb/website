@@ -15,7 +15,7 @@
              links: [a, b] pairs. an edge is a claim */
 window.DS={
 "start":"08.31.26",
-"pauses":[["09.21.26","11.02.26"]],
+"pauses":[["09.21.26","11.02.26"],["11.05.26","11.05.26"]],
 "days":[
 {"d":1,"date":"08.31.26","msg":"gate minus 1: mmap loader + scalar dot product, 2.5002e+07","x":"https://x.com/elijahadeb/status/2094508977266532669?s=20"},
 {"d":2,"date":"09.01.26","msg":"no number today. spent it on the mechanics —> simd, avx2, intel's intrinsics guide. worked out which handful of intrinsics a dot product actually needs. the guide lists thousands and explains none of them.","x":"https://x.com/elijahadeb/status/2094833631868977620?s=20"},
@@ -40,11 +40,10 @@ window.DS={
 {"d":21,"date":"09.20.26","msg":"rest"},
 {"d":22,"date":"11.03.26","msg":"back after the pause. re-read the operating doc and the gguf parser where i left it. decided the engine gets hand-written from here: ai explains, never writes engine code. site: mobile pass on the hero, ten times faster on slow phones"},
 {"d":23,"date":"11.04.26","msg":"learned to read a model file byte by byte with od, a unix tool from the 1970s (-A d -t x1 -N 24 -w8). refreshed on where i left off: finishing the loader, and reading the code i already have"},
-{"d":24,"date":"11.05.26","msg":"no code. planned year one: q1 laid out as 59 working days, one verifiable number each. amendment 016 shifts the calendar 43 days for the pause, q1 now closes 01.16.27"},
-{"d":25,"date":"11.06.26","msg":"references set. llama.cpp pinned at 6c01da627, release, cpu-only, -march=native. llama 3.2 1b / 3.2 3b / 3.1 8b q4_k_m downloaded, sizes byte-exact. 1b weights start at byte 7,831,552 = 244,736 × 32, matches gguf_dump.py"},
-{"d":26,"date":"11.07.26","msg":"llama-bench baselines at 6c01da627, repack on, -r 5. 1b: tg128 29.73 tok/s (8t), pp512 107.90 (4t). 8b: tg128 5.24 (8t), pp512 17.08 (4t). generation flattens after 2 threads, prompt processing keeps scaling. predictions weren't written before the run, so nothing to grade","note":"the plan's research guessed 5–8 tok/s for the 1b. it does ~30. measure, don't trust"},
-{"d":27,"date":"11.08.26","msg":"rest"},
-{"d":28,"date":"11.09.26","msg":"no engine work, family came first. kv reader carries to tomorrow"}
+{"d":24,"date":"11.06.26","msg":"references set. llama.cpp pinned at 6c01da627, release, cpu-only, -march=native. llama 3.2 1b / 3.2 3b / 3.1 8b q4_k_m downloaded, sizes byte-exact. 1b weights start at byte 7,831,552 = 244,736 × 32, matches gguf_dump.py"},
+{"d":25,"date":"11.07.26","msg":"llama-bench baselines at 6c01da627, repack on, -r 5. 1b: tg128 29.73 tok/s (8t), pp512 107.90 (4t). 8b: tg128 5.24 (8t), pp512 17.08 (4t). generation flattens after 2 threads, prompt processing keeps scaling. predictions weren't written before the run, so nothing to grade","note":"the plan's research guessed 5–8 tok/s for the 1b. it does ~30. measure, don't trust"},
+{"d":26,"date":"11.08.26","msg":"rest"},
+{"d":27,"date":"11.09.26","msg":"no engine work, family came first. kv reader carries to tomorrow"}
 ],
 "gates":[
 {"title":"gate −1: three dot products and a number","page":"gate-minus-1.html","cmd":"$ make gate-minus-1 && ./gate-minus-1 a.f32 b.f32","status":"next","date":null}
