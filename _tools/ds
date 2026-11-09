@@ -1,0 +1,568 @@
+#!/usr/bin/env python3
+"""ds — keep deadsilicon.com up to date without touching html.
+
+everything the pages show that changes lives in data.js, and every page reads it.
+each command below edits data.js, checks it, and with --push commits and pushes;
+github pages is live again in about a minute. dates are lagos dates (mm.dd.yy);
+"today" means today in lagos, and --date also takes "yesterday".
+
+every day
+  ds day "parsed the tensor table, 201 entries" --x https://x.com/…/status/…
+  ds rest                                 a rest day is still a day
+  ds day "…" --replace                    fix a line you already logged
+
+gates and writings (pages are made from _templates/, unlinked until published)
+  ds gate new gate-0 "gate 0: load a model" "$ make gate-0 && ./gate-0"
+  ds gate done gate-0 pass                publish it, dated today (or fail)
+  ds write essay slowest-gpu "why the slowest gpu i own is the whole point"
+  ds write note sum-stops "the sum stops growing"
+  ds publish sum-stops                    publish a writing, dated today
+
+the garden
+  ds seed id "label" "what it covers"     add a seed
+  ds plant id                             seed -> growing note, makes garden-id.html
+  ds tend id                              bump "last tended"
+  ds evergreen id                         it stopped changing
+  ds link a b                             an edge is a claim
+
+the rest
+  ds pause 09.21.26 11.02.26              the clock was stopped; those days don't count
+  ds status                               where things stand today
+  ds check                                validate data.js and the pages it names
+  ds push "message"                       commit and push whatever changed
+
+add --push to any command that changes something to publish it straight away.
+"""
+import argparse, json, os, re, shutil, subprocess, sys
+from datetime import datetime, timedelta, timezone, date
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA = os.path.join(ROOT, 'data.js')
+SITE = 'https://deadsilicon.com/'
+HEADER = '''/* data.js — everything on the site that changes, in one place. every page reads it.
+
+   the easy way is _tools/ds (run `_tools/ds help`): it edits this file, checks it,
+   commits and pushes. editing by hand works too, including on github.com from a
+   phone: keep everything after the equals sign valid json (double quotes, no
+   trailing commas), then run `_tools/ds check` when you're next at the laptop.
+
+   start     day 001, mm.dd.yy, lagos
+   pauses    [from, to] ranges when the clock was stopped; those days don't count
+   days      one per working day, oldest first. d, date, msg, and optionally x (the
+             post on x) and note (one extra sentence). a rest day is msg "rest"
+   gates     newest first: title, page, cmd, status next|pass|fail, date (null = not run)
+   writings  newest first: kind essay|note, title, page, date (null = still being written)
+   garden    notes: id, label, status seed|growing|evergreen, planted, tended, page, scope
+             links: [a, b] pairs. an edge is a claim */
+'''
+MARK = 'window.DS='
+
+
+def die(msg):
+    print('ds: ' + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+# ---- dates -------------------------------------------------------------------
+def today():
+    return (datetime.now(timezone.utc) + timedelta(hours=1)).date()   # lagos is utc+1, no dst
+
+
+def parse(s, what='date'):
+    if s in (None, ''):
+        return None
+    if s == 'today':
+        return today()
+    if s == 'yesterday':
+        return today() - timedelta(days=1)
+    m = re.fullmatch(r'(\d\d)\.(\d\d)\.(\d\d)', s)
+    if not m:
+        die(f'{what} "{s}" should look like 11.03.26 (mm.dd.yy)')
+    try:
+        return date(2000 + int(m[3]), int(m[1]), int(m[2]))
+    except ValueError:
+        die(f'{what} "{s}" is not a real date')
+
+
+def fmt(d):
+    return d.strftime('%m.%d.%y')
+
+
+def work_index(data, d):
+    """calendar date -> 0-based working day, or None before day 001 or inside a pause"""
+    start = parse(data['start'])
+    c = (d - start).days
+    if c < 0:
+        return None
+    off = 0
+    for a, b in sorted(data['pauses'], key=lambda p: parse(p[0])):
+        pa, pb = (parse(a) - start).days, (parse(b) - start).days
+        if c > pb:
+            off += pb - pa + 1
+        elif c >= pa:
+            return None
+    return c - off
+
+
+def date_of(data, n):
+    """working day n (1-based) -> calendar date"""
+    start = parse(data['start'])
+    c = n - 1
+    for a, b in sorted(data['pauses'], key=lambda p: parse(p[0])):
+        pa, pb = (parse(a) - start).days, (parse(b) - start).days
+        if c >= pa:
+            c += pb - pa + 1
+    return start + timedelta(days=c)
+
+
+# ---- data.js -----------------------------------------------------------------
+def load():
+    if not os.path.exists(DATA):
+        die('no data.js next to index.html')
+    text = open(DATA, encoding='utf-8').read()
+    i = text.find(MARK)
+    if i < 0:
+        die('data.js has lost its "window.DS=" line')
+    body = text[i + len(MARK):].strip()
+    if body.endswith(';'):
+        body = body[:-1]
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError as e:
+        line = text[:i].count('\n') + body[:e.pos].count('\n') + 1
+        die(f'data.js is not valid json at line {line}: {e.msg}. a trailing comma or a single quote, usually')
+    for k, v in (('pauses', []), ('days', []), ('gates', []), ('writings', []), ('garden', {'notes': [], 'links': []})):
+        data.setdefault(k, v)
+    return data
+
+
+def save(data):
+    j = lambda o: json.dumps(o, ensure_ascii=False, separators=(',', ':'))
+    rows = lambda xs: '[\n' + ',\n'.join(j(x) for x in xs) + '\n]' if xs else '[]'
+    out = (HEADER + MARK + '{\n'
+           + '"start":' + j(data['start']) + ',\n'
+           + '"pauses":' + j(data['pauses']) + ',\n'
+           + '"days":' + rows(data['days']) + ',\n'
+           + '"gates":' + rows(data['gates']) + ',\n'
+           + '"writings":' + rows(data['writings']) + ',\n'
+           + '"garden":{\n"notes":' + rows(data['garden']['notes']) + ',\n'
+           + '"links":' + j(data['garden']['links']) + '\n}\n};\n')
+    tmp = DATA + '.tmp'
+    open(tmp, 'w', encoding='utf-8').write(out)
+    os.replace(tmp, DATA)
+
+
+# ---- checking ----------------------------------------------------------------
+def problems(data):
+    errs, warns = [], []
+    try:
+        parse(data['start'])
+    except SystemExit:
+        errs.append('start is not a date')
+        return errs, warns
+    last = None
+    for a, b in sorted(data['pauses'], key=lambda p: parse(p[0], 'pause start')):
+        da, db = parse(a, 'pause start'), parse(b, 'pause end')
+        if db < da:
+            errs.append(f'pause {a} → {b} ends before it starts')
+        if last and da <= last:
+            errs.append(f'pause {a} → {b} overlaps the one before it')
+        last = db
+    seen, prev = set(), None
+    for h in data['days']:
+        n, d = h.get('d'), parse(h.get('date'), f'day {h.get("d")}')
+        if not isinstance(n, int) or n < 1:
+            errs.append(f'a day has no proper number: {h}')
+            continue
+        if n in seen:
+            errs.append(f'day {n:03} is logged twice')
+        seen.add(n)
+        if prev and n <= prev:
+            errs.append(f'day {n:03} is out of order (days go oldest first)')
+        prev = n
+        w = work_index(data, d)
+        if w is None:
+            errs.append(f'day {n:03} ({fmt(d)}) falls before day 001 or inside a pause')
+        elif w + 1 != n:
+            warns.append(f'day {n:03} is dated {fmt(d)}, which is working day {w + 1:03}')
+        if not str(h.get('msg', '')).strip():
+            errs.append(f'day {n:03} has no message')
+        if h.get('x') and not str(h['x']).startswith('https://'):
+            errs.append(f'day {n:03}: the x link should start with https://')
+    for kind, items in (('gate', data['gates']), ('writing', data['writings'])):
+        for it in items:
+            if not it.get('title') or not it.get('page'):
+                errs.append(f'a {kind} needs a title and a page: {it}')
+                continue
+            if it.get('date'):
+                parse(it['date'], f'{kind} "{it["title"]}"')
+                if not os.path.exists(os.path.join(ROOT, it['page'])):
+                    errs.append(f'{kind} "{it["title"]}" is published but {it["page"]} does not exist')
+            if kind == 'gate' and it.get('status') not in ('next', 'pass', 'fail'):
+                errs.append(f'gate "{it["title"]}": status must be next, pass or fail')
+            if kind == 'writing' and it.get('kind') not in ('essay', 'note'):
+                errs.append(f'writing "{it["title"]}": kind must be essay or note')
+    ids = set()
+    for n in data['garden']['notes']:
+        i = n.get('id')
+        if not i or i in ids:
+            errs.append(f'garden note id missing or repeated: {i}')
+        ids.add(i)
+        if n.get('status') not in ('seed', 'growing', 'evergreen'):
+            errs.append(f'garden note {i}: status must be seed, growing or evergreen')
+        if n.get('status') != 'seed':
+            if not n.get('page') or not os.path.exists(os.path.join(ROOT, n['page'])):
+                errs.append(f'garden note {i} is {n.get("status")} but its page is missing')
+    for a, b in data['garden']['links']:
+        if a not in ids or b not in ids:
+            errs.append(f'garden link {a} — {b} points at a note that does not exist')
+    return errs, warns
+
+
+def report(data, quiet=False):
+    errs, warns = problems(data)
+    for label, xs in (('note', warns), ('problem', errs)):
+        for x in xs[:4]:
+            print(f'  {label}: {x}')
+        if len(xs) > 4:
+            print(f'  …and {len(xs) - 4} more like that')
+    if not errs and not quiet:
+        print('  data.js checks out')
+    return not errs
+
+
+# ---- pages -------------------------------------------------------------------
+def esc(s):
+    return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+
+def make_page(template, page, title, crumb_href, crumb_name, here, back_href, back_text):
+    dst = os.path.join(ROOT, page)
+    if os.path.exists(dst):
+        print(f'  {page} already exists; leaving it as it is')
+        return False
+    src = os.path.join(ROOT, '_templates', template)
+    s = open(src, encoding='utf-8').read()
+    s = re.sub(r'\n  TEMPLATE — not published[^\n]*\n[^\n]*\n', '\n', s, count=1)
+    full = f'{title} · dead-silicon' if template == 'post.html' else f'{title} · the garden · dead-silicon'
+    s = re.sub(r'<title>.*?</title>', f'<title>{esc(full)}</title>', s, count=1)
+    s = re.sub(r'(<meta property="og:title" content=")[^"]*', lambda m: m[1] + full.replace('"', '&quot;'), s, count=1)
+    s = re.sub(r'(<meta property="og:url" content=")[^"]*', lambda m: m[1] + SITE + page, s, count=1)
+    s = re.sub(r'<h1>.*?</h1>', f'<h1>{esc(title)}</h1>', s, count=1)
+    s = re.sub(r'(<nav class="crumb"[^>]*>\s*<a href="index.html">d-s\.</a><span class="sep">/</span>)<a href="[^"]*">[^<]*</a>',
+               lambda m: m[1] + f'<a href="{crumb_href}">{crumb_name}</a>', s, count=1)
+    s = re.sub(r'<span class="here">.*?</span>', f'<span class="here">{esc(here)}</span>', s, count=1)
+    if back_href:
+        s = re.sub(r'<a class="back" href="[^"]*">.*?</a>',
+                   f'<a class="back" href="{back_href}"><span class="arw-l">←</span> {back_text}</a>', s, count=1)
+    open(dst, 'w', encoding='utf-8').write(s)
+    print(f'  made {page} from _templates/{template}: write it, then publish')
+    return True
+
+
+def slug_ok(slug):
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]*', slug):
+        die(f'"{slug}" should be lowercase letters, digits and dashes, like gate-0 or slowest-gpu')
+    return slug
+
+
+# ---- git -----------------------------------------------------------------------
+def git(*args, check=True):
+    r = subprocess.run(['git', *args], cwd=ROOT, capture_output=True, text=True)
+    if check and r.returncode:
+        die('git ' + ' '.join(args) + ' failed:\n' + (r.stderr or r.stdout).strip())
+    return r
+
+
+def push(message):
+    if not report(load(), quiet=True):
+        die('not publishing until the problems above are fixed')
+    git('add', '--', 'data.js')
+    pages = [f for f in os.listdir(ROOT) if f.endswith('.html')]
+    if pages:
+        git('add', '--', *pages)
+    if not git('diff', '--cached', '--quiet', check=False).returncode:
+        print('  nothing new to publish')
+        return
+    git('commit', '-q', '-m', message)
+    # pick up anything published from elsewhere first (a merge on github, a phone edit)
+    r = git('pull', '--rebase', '--autostash', '-q', check=False)
+    if r.returncode:
+        out = (r.stderr + r.stdout).strip()
+        git('rebase', '--abort', check=False)
+        if 'CONFLICT' in out or 'conflict' in out:
+            die('committed here, but github changed the same lines since your last pull. run `git pull --rebase`, '
+                'keep the right version of data.js, then `ds push`.')
+        die('committed here, but could not pull from github first:\n' + out)
+    r = git('push', '-q', check=False)
+    if r.returncode:
+        die('committed, but the push failed (offline?). run `ds push` again later.\n' + r.stderr.strip())
+    print('  published: live in about a minute')
+
+
+def done(args, data, message):
+    save(data)
+    ok = report(data, quiet=True)
+    if getattr(args, 'push', False):
+        if not ok:
+            die('saved, but not publishing until the problems above are fixed')
+        push(message)
+    else:
+        print('  saved. publish with: _tools/ds push "' + message + '"')
+
+
+# ---- commands ----------------------------------------------------------------
+def cmd_day(a, rest=False):
+    data = load()
+    d = parse(a.date) if a.date else today()
+    if d > today():
+        die(f'{fmt(d)} hasn\'t happened yet in lagos')
+    w = work_index(data, d)
+    if w is None:
+        die(f'{fmt(d)} is before day 001 or inside a pause')
+    n = w + 1
+    msg = 'rest' if rest else ' '.join(a.msg).strip()
+    if not msg:
+        die('say what happened, in one line')
+    entry = {'d': n, 'date': fmt(d), 'msg': msg}
+    if getattr(a, 'x', None) and not a.x.startswith('https://'):
+        die('the x link should start with https://')
+    if getattr(a, 'x', None):
+        entry['x'] = a.x
+    if getattr(a, 'note', None):
+        entry['note'] = a.note
+    days = data['days']
+    at = [i for i, h in enumerate(days) if h['d'] == n]
+    if at and not a.replace:
+        die(f'day {n:03} is already logged: "{days[at[0]]["msg"]}". use --replace to change it')
+    if at:
+        days[at[0]] = entry
+    else:
+        days.append(entry)
+        days.sort(key=lambda h: h['d'])
+    logged = {h['d'] for h in days}
+    gap = [k for k in range(1, n) if k not in logged]
+    print(f'  day {n:03} · {fmt(d)} · {msg}')
+    if gap:
+        print(f'  note: {len(gap)} earlier working day(s) have no line: ' + ', '.join(f'{k:03}' for k in gap[-6:]) +
+              ('' if len(gap) <= 6 else ' …') + '. log them with --date, or mark a pause')
+    done(a, data, f'log: day {n:03}')
+
+
+def cmd_pause(a):
+    data = load()
+    fa, fb = parse(a.start, 'pause start'), parse(a.end, 'pause end')
+    if fb < fa:
+        die('a pause ends after it starts')
+    for pa, pb in data['pauses']:
+        if fa <= parse(pb) and parse(pa) <= fb:
+            die(f'that overlaps the pause {pa} → {pb}')
+    inside = [h for h in data['days'] if fa <= parse(h['date']) <= fb]
+    if inside:
+        die(f'day {inside[0]["d"]:03} ({inside[0]["date"]}) is logged inside that range')
+    data['pauses'].append([fmt(fa), fmt(fb)])
+    data['pauses'].sort(key=lambda p: parse(p[0]))
+    print(f'  clock paused {fmt(fa)} → {fmt(fb)} · {(fb - fa).days + 1} days not counted')
+    done(a, data, f'log: clock paused {fmt(fa)} → {fmt(fb)}')
+
+
+def cmd_gate(a):
+    data = load()
+    if a.action == 'new':
+        slug = slug_ok(a.slug)
+        if not a.title:
+            die('a new gate needs a title: ds gate new gate-0 "gate 0: …" "$ command"')
+        page = slug + '.html'
+        if any(g['page'] == page for g in data['gates']):
+            die(f'there is already a gate at {page}')
+        make_page('post.html', page, a.title, 'log.html', 'log', a.title.split(':')[0], 'log.html', 'back to the log')
+        data['gates'].insert(0, {'title': a.title, 'page': page, 'cmd': a.run or '', 'status': 'next', 'date': None})
+        print(f'  gate "{a.title}" is on the log and the homepage as in progress')
+        done(a, data, f'log: new gate, {a.title}')
+    else:
+        page = slug_ok(a.slug) + '.html'
+        g = next((g for g in data['gates'] if g['page'] == page), None)
+        if not g:
+            die(f'no gate at {page}. gates: ' + ', '.join(g['page'][:-5] for g in data['gates']))
+        res = (a.title or '').lower()
+        if res not in ('pass', 'fail'):
+            die('say how it went: ds gate done ' + a.slug + ' pass   (or fail)')
+        if not os.path.exists(os.path.join(ROOT, page)):
+            die(f'{page} does not exist yet; write it before publishing')
+        g['status'], g['date'] = res, fmt(parse(a.date) if a.date else today())
+        print(f'  gate "{g["title"]}" published · {g["date"]} · [{res}]')
+        done(a, data, f'log: {g["title"]} — {res}')
+
+
+def cmd_write(a):
+    data = load()
+    slug = slug_ok(a.slug)
+    page = slug + '.html'
+    w = next((w for w in data['writings'] if w['page'] == page), None)
+    if w and os.path.exists(os.path.join(ROOT, page)):
+        die(f'{page} already exists and is listed; just write it, then: ds publish {slug}')
+    make_page('post.html', page, a.title, 'writings.html', 'writings', a.title, 'writings.html', 'back to writings')
+    if w:
+        w.update({'kind': a.kind, 'title': a.title})
+    else:
+        data['writings'].insert(0, {'kind': a.kind, 'title': a.title, 'page': page, 'date': None})
+    print(f'  {a.kind} "{a.title}" is on writings as being written')
+    done(a, data, f'writings: new {a.kind}, {a.title}')
+
+
+def cmd_publish(a):
+    data = load()
+    page = slug_ok(a.slug) + '.html'
+    w = next((w for w in data['writings'] if w['page'] == page), None)
+    if not w:
+        die(f'no writing at {page}. writings: ' + ', '.join(w['page'][:-5] for w in data['writings']))
+    if not os.path.exists(os.path.join(ROOT, page)):
+        die(f'{page} does not exist yet; write it before publishing')
+    w['date'] = fmt(parse(a.date) if a.date else today())
+    print(f'  {w["kind"]} "{w["title"]}" published · {w["date"]}')
+    done(a, data, f'writings: publish {w["title"]}')
+
+
+def note_of(data, nid):
+    n = next((n for n in data['garden']['notes'] if n['id'] == nid), None)
+    if not n:
+        die(f'no garden note "{nid}". notes: ' + ', '.join(n['id'] for n in data['garden']['notes']))
+    return n
+
+
+def stamp_note_page(n, status=None, tended=None):
+    p = n.get('page') and os.path.join(ROOT, n['page'])
+    if not p or not os.path.exists(p):
+        return
+    s = open(p, encoding='utf-8').read()
+    if status:
+        s = re.sub(r'<b>\[(seed|growing|evergreen)\]</b>', f'<b>[{status}]</b>', s, count=1)
+    if tended:
+        s = re.sub(r'last tended [0-9_]{2}\.[0-9_]{2}\.[0-9_]{2}', 'last tended ' + tended, s, count=1)
+    open(p, 'w', encoding='utf-8').write(s)
+
+
+def cmd_seed(a):
+    data = load()
+    nid = slug_ok(a.id)
+    if any(n['id'] == nid for n in data['garden']['notes']):
+        die(f'there is already a note "{nid}"')
+    data['garden']['notes'].append({'id': nid, 'label': a.label, 'status': 'seed', 'planted': None,
+                                    'tended': None, 'page': None, 'scope': a.scope or ''})
+    print(f'  seed "{a.label}" is in the garden')
+    done(a, data, f'garden: seed {a.label}')
+
+
+def cmd_plant(a):
+    data = load()
+    n = note_of(data, a.id)
+    if n['status'] != 'seed':
+        die(f'{a.id} is already {n["status"]}')
+    t = fmt(today())
+    page = 'garden-' + n['id'] + '.html'
+    if make_page('garden-note.html', page, n['label'], 'garden.html', 'garden', n['id'], 'garden.html#' + n['id'], 'back to the garden'):
+        p = os.path.join(ROOT, page)
+        s = open(p, encoding='utf-8').read()
+        s = s.replace('planted __.__.__', 'planted ' + t, 1).replace('last tended __.__.__', 'last tended ' + t, 1)
+        open(p, 'w', encoding='utf-8').write(s)
+    n.update({'status': 'growing', 'planted': n.get('planted') or t, 'tended': t, 'page': page})
+    stamp_note_page(n, status='growing')
+    print(f'  "{n["label"]}" is growing · write {page}')
+    done(a, data, f'garden: plant {n["label"]}')
+
+
+def cmd_tend(a, evergreen=False):
+    data = load()
+    n = note_of(data, a.id)
+    if n['status'] == 'seed':
+        die(f'{a.id} is still a seed; plant it first: ds plant {a.id}')
+    t = fmt(today())
+    n['tended'] = t
+    if evergreen:
+        n['status'] = 'evergreen'
+    stamp_note_page(n, status=n['status'], tended=t)
+    print(f'  "{n["label"]}" · {n["status"]} · last tended {t}')
+    done(a, data, f'garden: {"evergreen" if evergreen else "tend"} {n["label"]}')
+
+
+def cmd_link(a):
+    data = load()
+    note_of(data, a.a), note_of(data, a.b)
+    links = data['garden']['links']
+    if any({x, y} == {a.a, a.b} for x, y in links):
+        die(f'{a.a} and {a.b} are already linked')
+    links.append([a.a, a.b])
+    print(f'  linked {a.a} — {a.b}')
+    done(a, data, f'garden: link {a.a} — {a.b}')
+
+
+def cmd_status(a):
+    data = load()
+    t = today()
+    w = work_index(data, t)
+    days = data['days']
+    print(f'  today {fmt(t)} · ' + (f'day {w + 1:03} of 365' if w is not None else 'the clock is paused'))
+    if days:
+        h = days[-1]
+        print(f'  last line: day {h["d"]:03} · {h["date"]} · {h["msg"]}')
+    if w is not None:
+        logged = {h['d'] for h in days}
+        missing = [k for k in range(1, w + 2) if k not in logged]
+        if missing and missing[-1] == w + 1:
+            print('  today has no line yet: ds day "…"   (or ds rest)')
+        older = [k for k in missing if k != w + 1]
+        if older:
+            print(f'  {len(older)} earlier working day(s) without a line, the latest {older[-1]:03} ({fmt(date_of(data, older[-1]))})')
+    wip = [g['title'] for g in data['gates'] if not g.get('date')]
+    if wip:
+        print('  gates in progress: ' + '; '.join(wip))
+    pend = [f'{x["kind"]} "{x["title"]}"' for x in data['writings'] if not x.get('date')]
+    if pend:
+        print('  being written: ' + '; '.join(pend))
+    g = data['garden']['notes']
+    c = {s: sum(1 for n in g if n['status'] == s) for s in ('seed', 'growing', 'evergreen')}
+    print(f'  garden: {c["seed"]} seeds, {c["growing"]} growing, {c["evergreen"]} evergreen')
+    stale = [n['id'] for n in g if n['status'] == 'growing' and n.get('tended') and (t - parse(n['tended'])).days > 21]
+    if stale:
+        print('  not tended in 3 weeks: ' + ', '.join(stale))
+    report(data, quiet=True)
+
+
+def main():
+    ap = argparse.ArgumentParser(prog='ds', add_help=False)
+    sub = ap.add_subparsers(dest='command')
+    def p(name, **kw):
+        s = sub.add_parser(name, add_help=False, **kw)
+        s.add_argument('--push', action='store_true')
+        return s
+    s = p('day'); s.add_argument('msg', nargs='*'); s.add_argument('--x'); s.add_argument('--note')
+    s.add_argument('--date'); s.add_argument('--replace', action='store_true')
+    s = p('rest'); s.add_argument('--date'); s.add_argument('--replace', action='store_true')
+    s = p('pause'); s.add_argument('start'); s.add_argument('end')
+    s = p('gate'); s.add_argument('action', choices=['new', 'done']); s.add_argument('slug')
+    s.add_argument('title', nargs='?'); s.add_argument('run', nargs='?'); s.add_argument('--date')
+    s = p('write'); s.add_argument('kind', choices=['essay', 'note']); s.add_argument('slug'); s.add_argument('title')
+    s = p('publish'); s.add_argument('slug'); s.add_argument('--date')
+    s = p('seed'); s.add_argument('id'); s.add_argument('label'); s.add_argument('scope', nargs='?')
+    for name in ('plant', 'tend', 'evergreen'):
+        s = p(name); s.add_argument('id')
+    s = p('link'); s.add_argument('a'); s.add_argument('b')
+    sub.add_parser('status', add_help=False)
+    sub.add_parser('check', add_help=False)
+    s = sub.add_parser('push', add_help=False); s.add_argument('message', nargs='*')
+    for h in ('help', '-h', '--help'):
+        sub.add_parser(h, add_help=False)
+    if len(sys.argv) < 2:
+        print(__doc__)
+        return
+    a = ap.parse_args()
+    {'day': cmd_day, 'rest': lambda a: cmd_day(a, rest=True), 'pause': cmd_pause, 'gate': cmd_gate,
+     'write': cmd_write, 'publish': cmd_publish, 'seed': cmd_seed, 'plant': cmd_plant, 'tend': cmd_tend,
+     'evergreen': lambda a: cmd_tend(a, evergreen=True), 'link': cmd_link, 'status': cmd_status,
+     'check': lambda a: sys.exit(0 if report(load()) else 1),
+     'push': lambda a: push(' '.join(a.message).strip() or 'site: update'),
+     'help': lambda a: print(__doc__), '-h': lambda a: print(__doc__), '--help': lambda a: print(__doc__)}[a.command](a)
+
+
+if __name__ == '__main__':
+    main()

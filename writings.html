@@ -2,7 +2,8 @@
 <!-- dead-silicon — writings: the thinking layer. essays (long technical
      teardowns) + notes (short observations). text-forward, no icon grid —
      each PIECE gets a system glyph on its own page (see essay.html).
-     execution telemetry (gates, hashes) lives in log.html — never here. -->
+     execution telemetry (gates, hashes) lives in log.html — never here.
+     the list itself lives in data.js: _tools/ds write / publish keeps it. -->
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -204,20 +205,10 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
     every piece opens with a system glyph: a stippled schematic of the concept inside.</p>
 
   <h2>essays</h2>
-  <div class="rows">
-    <!-- newest first. a .row.wip is claimed but unwritten — never a link. -->
-    <a class="row" href="essay.html"><span class="rl"> <!-- <span class="rg">[essay]</span> --> <span class="rt">why the slowest gpu i own is the whole point</span></span><span class="rd">08.28.26</span></a>
-  </div>
+  <div class="rows" id="w-essay"></div>
 
   <h2>notes</h2>
-  <div class="rows">
-    <!-- PENDING note. a pending item is a <div>, never an <a>, so it cannot be a
-         dead click. to publish:
-           FROM  <div class="row wip"> … <span class="rd"><span class="verb">…</span></span></div>
-           TO    <a class="row" href="note-sum-stops-growing.html"> … <span class="rd">09.02.26</span></a>
-         div->a, add href, drop " wip", swap the verb span for the date. -->
-    <div class="row wip"><span class="rl"><!--<span class="rg"> [note]</span>--><span class="rt">the sum stops growing</span></span><span class="rd"><span class="verb n" role="img" aria-label="being written"><i>drafting</i><i>thinking</i><i>rewriting</i><i>cutting</i><i>hedging</i></span></span></div>
-  </div>
+  <div class="rows" id="w-note"></div>
 </main>
 
 <footer>
@@ -244,6 +235,7 @@ footer .wrap{max-width:var(--w);margin-inline:auto;padding:46px 20px 40px}
   </div>
 </footer>
 
+<script src="data.js"></script>
 <script>
 (function(){
 "use strict";
@@ -253,6 +245,17 @@ function cvar(n){return getComputedStyle(root).getPropertyValue(n).trim()}
 function mulberry32(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;
   var r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;
   return ((r^(r>>>14))>>>0)/4294967296}}
+
+/* essays and notes, newest first, from data.js. one still being written is a <div>,
+   never an <a>, so it can't be a dead click; its verb types itself out */
+var DS=window.DS||{writings:[]};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var NVERB='<span class="verb n" role="img" aria-label="being written"><i>drafting</i><i>thinking</i><i>rewriting</i><i>cutting</i><i>hedging</i></span>';
+["essay","note"].forEach(function(kind){
+  q("#w-"+kind).innerHTML=DS.writings.filter(function(w){return w.kind===kind}).map(function(w){
+    var t='<span class="rl"><span class="rt">'+esc(w.title)+'</span></span>';
+    return w.date?'<a class="row" href="'+esc(w.page)+'">'+t+'<span class="rd">'+esc(w.date)+'</span></a>'
+      :'<div class="row wip">'+t+'<span class="rd">'+NVERB+'</span></div>'}).join("")});
 var themeBtn=q("#theme");
 if(root.getAttribute("data-theme")==="dark"){
   themeBtn.textContent="light";themeBtn.setAttribute("aria-pressed","false");
