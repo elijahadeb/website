@@ -1,0 +1,153 @@
+/* site.css — the look every page shares. loaded last in each page's <head>, so it
+   has the final word over the page's own styles.
+
+   the colours are taken from the painting on the front page (art/, painted by
+   _tools/paint/bench.py). there are two lights, the same two the painting has:
+     dark  = the bench at night. the ground is the painting's toned ground, the ink
+             is lamplight on paper, the accent is the bulb.
+     light = the bench by day. the ground is the same ground in daylight, the accent
+             is the red the wall planner's days are crossed off in.
+   the page opens in whichever it is in lagos right now; the switch overrides that
+   for the visit.
+
+   two faces: alegreya for anything meant to be read, jetbrains mono for anything
+   that came out of a machine (dates, hashes, commands, numbers). */
+
+@font-face{font-family:"Alegreya";src:url("fonts/Alegreya.woff2") format("woff2");font-weight:400 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Alegreya";src:url("fonts/Alegreya-Italic.woff2") format("woff2");font-weight:400 900;font-style:italic;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono"),local("JetBrainsMono-Regular"),url("fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:local("JetBrains Mono Medium"),local("JetBrainsMono-Medium"),url("fonts/JetBrainsMono-Medium.woff2") format("woff2");font-weight:500 800;font-style:normal;font-display:swap}
+
+:root{--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --serif:"Alegreya","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--w:42rem}
+:root[data-theme="dark"]{--bg:#10142a;--ink:#f0e7d3;--dim:rgba(240,231,211,.80);
+  --mute:rgba(240,231,211,.62);--faint:rgba(240,231,211,.28);--line:rgba(240,231,211,.15);
+  --ember:#ffc45a;--red:#f2745c;--rest:#8e9bd0;--live:#9fe6b0;--paper:#e9e3d2;--onwash:#10142a;--tint:rgba(240,231,211,.07);--panel:#191e3a}
+:root[data-theme="light"]{--bg:#dde4dc;--ink:#14211f;--dim:rgba(20,33,31,.84);
+  --mute:rgba(20,33,31,.69);--faint:rgba(20,33,31,.32);--line:rgba(20,33,31,.17);
+  --ember:#a3271c;--red:#a3271c;--rest:#4d5f86;--live:#1c6a48;--paper:#f1ede0;--onwash:#14211f;--tint:rgba(20,33,31,.07);--panel:#cfd8cf}
+
+/* the ground: one flat colour with the tooth of the canvas over it */
+html{background:var(--bg)}
+body{background:var(--bg) url("art/grain.png");color:var(--ink);font-family:var(--serif);
+  font-size:1.17rem;line-height:1.6;font-feature-settings:"kern","liga";font-variant-numeric:lining-nums;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:var(--ember);color:var(--bg)}
+
+h1,h2,h3{font-family:var(--serif);letter-spacing:-.005em;text-wrap:balance}
+h1{font-weight:500;font-size:clamp(2.1rem,5.4vw,3.2rem);line-height:1.06;margin-bottom:.35em}
+h2{font-weight:700;font-size:1.55rem;line-height:1.2}
+h3{font-weight:700;font-size:1.2rem}
+p{color:var(--dim);text-wrap:pretty}
+p b,p strong,p .name{font-weight:700;color:var(--ink)}
+
+/* a link is underlined in pencil. under the pointer it gets a swash of the lamp's
+   colour, painted by _tools/paint/marks.py */
+a{color:var(--ink);text-decoration-thickness:1px;text-decoration-color:var(--faint);text-underline-offset:.2em}
+a:hover{color:var(--onwash);text-decoration-color:transparent;
+  background:url("art/swash-gold.png") center/100% 100% no-repeat;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone}   /* a link broken over two lines gets a swash on each */
+:focus-visible{outline:2px solid var(--ember);outline-offset:3px;border-radius:2px}
+button{font-family:var(--mono)}
+button:hover{color:var(--ember)}
+
+/* what a machine said stays in the machine's face */
+code,pre,kbd,samp,table,.mono,.hud,.crumb,.rd,.rg,.meta,.cmd,.hash,.verb,#clock,#ignlabel small,
+.laws b,.tag,.kv,.stat,time,figcaption{font-family:var(--mono)}
+.hud,.crumb{font-size:.74rem;letter-spacing:.01em}
+.rd,.rg{font-size:.74rem}
+pre,code{font-size:.8rem}
+.sub{font-size:1.17rem}
+
+
+/* header: the name, where you can go, what time it is at the bench */
+header.top{background:var(--bg) url("art/grain.png");border-bottom:0}
+header.top::after{content:"";display:block;height:9px;margin:0 max(20px,calc(50% - var(--w)/2 - 20px));background:var(--faint);
+  -webkit-mask:url("art/rule.png") center/100% 100% no-repeat;mask:url("art/rule.png") center/100% 100% no-repeat}
+header.top .bar{align-items:center;padding-block:12px 8px}
+.mark,.crumb a:first-child{font-family:var(--serif);font-style:italic;font-weight:800;font-size:1.25rem;letter-spacing:0;text-decoration:none}
+.mark:hover,.crumb a:hover,.hud nav a:hover,.sig-name:hover{background:none;color:var(--ember)}
+.hud nav a{color:var(--dim)}
+
+/* a brushed rule instead of a ruled line */
+.rule,section.sec{border:0}
+section.sec + section.sec::before,.rule{content:"";display:block;height:11px;max-width:var(--w);margin-inline:auto;background:var(--faint);
+  -webkit-mask:url("art/rule.png") center/calc(100% - 40px) 100% no-repeat;mask:url("art/rule.png") center/calc(100% - 40px) 100% no-repeat}
+
+/* rows of dated things */
+.row{font-family:var(--serif)}
+.row .rt{font-weight:500;font-size:1.17rem}
+a.row:hover{background:none;color:var(--ink)}
+/* the title is only as wide as its words, so the swash under the pointer fits it */
+.row .rt{flex:0 1 auto!important}
+a.row:hover .rt{color:var(--onwash);background:url("art/swash-gold.png") center/100% 100% no-repeat}
+.more,.links a{font-family:var(--serif);border-bottom:0!important;text-decoration:underline;text-decoration-thickness:1px;
+  text-decoration-color:var(--faint);text-underline-offset:.2em;padding:6px 3px}
+.topics a,.topics span{border:0!important;padding:4px 2px!important;text-decoration:underline;text-decoration-thickness:1px;
+  text-decoration-color:var(--faint);text-underline-offset:.2em;font-size:1.05rem}
+
+/* footer */
+footer{border-top:0}
+footer::before{content:"";display:block;height:11px;max-width:var(--w);margin-inline:auto;background:var(--faint);
+  -webkit-mask:url("art/rule.png") center/calc(100% - 40px) 100% no-repeat;mask:url("art/rule.png") center/calc(100% - 40px) 100% no-repeat}
+.sig-name{font-family:var(--serif);font-style:italic;font-weight:800;font-size:1.3rem;letter-spacing:0}
+.sig-line{font-family:var(--serif);font-size:1rem}
+.laws{font-size:1.05rem;border-bottom:0!important}
+.laws li{border-top:0!important;padding:5px 0!important}
+.laws b{font-weight:500}
+
+@media (max-width:640px){
+  body{font-size:1.1rem}
+  .sub{font-size:1.1rem}
+}
+
+/* the picture at the head of an inner page: one thing on the bench, seen close. the
+   front page's painting is the map, so the log opens under the planner, the writings
+   under the notebook, the garden under the plant, a gate under the screen.
+   (_tools/paint/bench.py paints these as the views "planner", "notebook", ...) */
+.detail{display:block;max-width:1020px;margin:14px auto 0;aspect-ratio:3/1;background:center/cover no-repeat}
+a.detail:hover{background-size:cover;background-position:center}
+:root[data-theme="dark"] .detail.planner{background-image:url("art/bench-night-planner.webp")}
+:root[data-theme="light"] .detail.planner{background-image:url("art/bench-day-planner.webp")}
+:root[data-theme="dark"] .detail.notebook{background-image:url("art/bench-night-notebook.webp")}
+:root[data-theme="light"] .detail.notebook{background-image:url("art/bench-day-notebook.webp")}
+:root[data-theme="dark"] .detail.plant{background-image:url("art/bench-night-plant.webp")}
+:root[data-theme="light"] .detail.plant{background-image:url("art/bench-day-plant.webp")}
+:root[data-theme="dark"] .detail.screen{background-image:url("art/bench-night-screen.webp")}
+:root[data-theme="light"] .detail.screen{background-image:url("art/bench-day-screen.webp")}
+.dplate{max-width:var(--w);margin:2px auto 0;padding:0 20px;font-size:.95rem;line-height:1.45;color:var(--mute)}
+
+/* the old look set its small labels in tracked capitals. that says nothing, so it is off. */
+.meta,.repro h2,#d-meta,.d-h,.gate .gm,.pending b,.fig-cap,.cap{text-transform:none!important;letter-spacing:0!important}
+/* and the dashed hairlines between rows: the space does that job */
+.rows,.row,.hashes,.hash{border:0!important}
+.back{border-bottom:0!important;font-family:var(--serif);font-size:1rem;text-decoration:underline;text-decoration-thickness:1px;
+  text-decoration-color:var(--faint);text-underline-offset:.2em;padding:4px 2px!important}
+.fnav{font-family:var(--serif);font-size:1rem;gap:2px 20px!important;margin-top:18px!important}
+.fnav a{text-decoration:underline!important;text-decoration-thickness:1px!important;text-decoration-color:var(--faint)!important;text-underline-offset:.2em}
+.fnav a:hover{color:var(--onwash)!important}
+
+/* reading pages (essays, notes, gates). a block of machine output is a darker patch
+   of the same ground, not a ruled box; the two call-outs a gate carries (not run
+   yet, and how to reproduce it) are the same patch with a plain heading. */
+pre{border:0!important;background:var(--panel)!important;color:var(--dim)}
+:not(pre)>code{background:var(--panel)!important;color:var(--ink);border-radius:2px}
+.pending,.repro{border:0!important;background:var(--tint);padding:18px 20px!important}
+.pending b,.repro h2{font-family:var(--serif);font-size:1.15rem!important;font-weight:700!important;color:var(--ink)!important}
+.repro p{font-size:1.05rem!important}
+.repro pre{background:var(--bg)!important}
+article h2{margin-top:1.9em}
+article .meta,main .meta{font-family:var(--mono);font-size:.74rem!important;color:var(--mute)}
+article .meta b,main .meta b{font-weight:500;color:var(--ember)}
+article h2{font-size:1.35rem!important;letter-spacing:0!important;font-weight:700!important}
+
+/* the light switch says what it will do; on a narrow screen, just where it goes */
+@media (max-width:560px){#theme .w{display:none}}
+
+/* a plain control: something the page does, as opposed to somewhere it goes */
+.ctl{font-family:var(--mono);font-size:.74rem;color:var(--dim);border:1px solid var(--faint);border-radius:3px;
+  padding:6px 11px;margin:0;background:none;cursor:pointer}
+.ctl:hover{color:var(--ink);border-color:var(--ink)}
+
+/* a post opens with its picture, then goes straight to the title */
+article{padding-top:38px!important}

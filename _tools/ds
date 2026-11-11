@@ -25,6 +25,12 @@ the garden
   ds evergreen id                         it stopped changing
   ds link a b                             an edge is a claim
 
+the painting on the front page (needs numpy, opencv and pillow)
+  ds paint                                repaint them. the wall planner on the front page crosses
+                                          off one box per logged day, and the garden's planter
+                                          shows the notes and links as they were when painted;
+                                          repaint after logging, planting, tending or linking
+
 the rest
   ds pause 09.21.26 11.02.26              the clock was stopped; those days don't count
   ds status                               where things stand today
@@ -249,12 +255,14 @@ def make_page(template, page, title, crumb_href, crumb_name, here, back_href, ba
     s = re.sub(r'(<meta property="og:title" content=")[^"]*', lambda m: m[1] + full.replace('"', '&quot;'), s, count=1)
     s = re.sub(r'(<meta property="og:url" content=")[^"]*', lambda m: m[1] + SITE + page, s, count=1)
     s = re.sub(r'<h1>.*?</h1>', f'<h1>{esc(title)}</h1>', s, count=1)
+    if crumb_name == 'writings':      # a gate opens under the painting's screen, a writing under its notebook
+        s = s.replace('class="detail screen"', 'class="detail notebook"', 1)
     s = re.sub(r'(<nav class="crumb"[^>]*>\s*<a href="index.html">d-s\.</a><span class="sep">/</span>)<a href="[^"]*">[^<]*</a>',
                lambda m: m[1] + f'<a href="{crumb_href}">{crumb_name}</a>', s, count=1)
     s = re.sub(r'<span class="here">.*?</span>', f'<span class="here">{esc(here)}</span>', s, count=1)
     if back_href:
         s = re.sub(r'<a class="back" href="[^"]*">.*?</a>',
-                   f'<a class="back" href="{back_href}"><span class="arw-l">←</span> {back_text}</a>', s, count=1)
+                   f'<a class="back" href="{back_href}">{back_text}</a>', s, count=1)
     open(dst, 'w', encoding='utf-8').write(s)
     print(f'  made {page} from _templates/{template}: write it, then publish')
     return True
@@ -278,6 +286,9 @@ def push(message):
     if not report(load(), quiet=True):
         die('not publishing until the problems above are fixed')
     git('add', '--', 'data.js')
+    art = [f for f in ('art', 'og.png', 'touch-icon.png', 'favicon.ico') if os.path.exists(os.path.join(ROOT, f))]
+    if art:
+        git('add', '--', *art)
     pages = [f for f in os.listdir(ROOT) if f.endswith('.html')]
     if pages:
         git('add', '--', *pages)
@@ -464,6 +475,9 @@ def cmd_plant(a):
         p = os.path.join(ROOT, page)
         s = open(p, encoding='utf-8').read()
         s = s.replace('planted __.__.__', 'planted ' + t, 1).replace('last tended __.__.__', 'last tended ' + t, 1)
+        # the link back into the planter opens this note, not the template's example
+        s = s.replace('<a href="garden.html#mmap">see it in the planter</a>',
+                      f'<a href="garden.html#{n["id"]}">see it in the planter</a>', 1)
         open(p, 'w', encoding='utf-8').write(s)
     n.update({'status': 'growing', 'planted': n.get('planted') or t, 'tended': t, 'page': page})
     stamp_note_page(n, status='growing')
@@ -528,6 +542,18 @@ def cmd_status(a):
     report(data, quiet=True)
 
 
+def cmd_paint(a):
+    """repaint the front page's pictures from the room described in _tools/paint/bench.py."""
+    for script in (os.path.join('_tools', 'paint', 'bench.py'), os.path.join('_tools', 'paint', 'garden.py'), 'banner.py'):
+        r = subprocess.run([sys.executable, os.path.join(ROOT, script)], cwd=ROOT)
+        if r.returncode:
+            die(f'{script} failed. it needs numpy, opencv (cv2) and pillow.')
+    if getattr(a, 'push', False):
+        push('site: repaint the bench')
+    else:
+        print('  painted. publish with: _tools/ds push "site: repaint the bench"')
+
+
 def main():
     ap = argparse.ArgumentParser(prog='ds', add_help=False)
     sub = ap.add_subparsers(dest='command')
@@ -547,6 +573,7 @@ def main():
     for name in ('plant', 'tend', 'evergreen'):
         s = p(name); s.add_argument('id')
     s = p('link'); s.add_argument('a'); s.add_argument('b')
+    p('paint')
     sub.add_parser('status', add_help=False)
     sub.add_parser('check', add_help=False)
     s = sub.add_parser('push', add_help=False); s.add_argument('message', nargs='*')
@@ -559,6 +586,7 @@ def main():
     {'day': cmd_day, 'rest': lambda a: cmd_day(a, rest=True), 'pause': cmd_pause, 'gate': cmd_gate,
      'write': cmd_write, 'publish': cmd_publish, 'seed': cmd_seed, 'plant': cmd_plant, 'tend': cmd_tend,
      'evergreen': lambda a: cmd_tend(a, evergreen=True), 'link': cmd_link, 'status': cmd_status,
+     'paint': cmd_paint,
      'check': lambda a: sys.exit(0 if report(load()) else 1),
      'push': lambda a: push(' '.join(a.message).strip() or 'site: update'),
      'help': lambda a: print(__doc__), '-h': lambda a: print(__doc__), '--help': lambda a: print(__doc__)}[a.command](a)
