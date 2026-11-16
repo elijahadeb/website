@@ -672,6 +672,10 @@ class Painter:
         cols, rows = 31, 12
         done, rest = logged_days()
         n = 0
+        # the marks get their own run of the dice, put back afterwards. so logging a day
+        # changes the planner and nothing else: every other stroke in the picture lands
+        # exactly where it did, and a repaint only rewrites the files the planner is in.
+        dice = cv.rng.bit_generator.state
         for j in range(rows):
             for i in range(cols):
                 if n >= 365:
@@ -689,6 +693,7 @@ class Painter:
                 else:
                     p = P(c)
                     cv.dab(p[0], p[1], 2.3 * S, self.lit(c, Nz, V(0.55, 0.56, 0.58), samples=1), ang=0, stretch=1.0, alpha=0.7)
+        cv.rng.bit_generator.state = dice
         for u in (0.06, 0.94):                                          # masking tape, top corners
             c = g(u, 0.0)
             p = P(c)
@@ -1032,7 +1037,12 @@ if __name__ == "__main__":
         os.makedirs(os.path.join(ROOT, "art"), exist_ok=True)
         jobs = [(m, v) for m in ("night", "day") for v in VIEWS]
         t = time.time()
-        with Pool(min(6, os.cpu_count() or 1)) as pool:
+        # painting is patient work: step aside for whatever else the machine is doing
+        try:
+            os.nice(10)
+        except OSError:
+            pass
+        with Pool(int(os.environ.get("DS_PAINT_JOBS", 0)) or min(6, max(2, (os.cpu_count() or 2) - 2))) as pool:
             meta = dict(pool.map(export, jobs))
         done, rest = logged_days()
         meta["days"] = len(done) + len(rest)
