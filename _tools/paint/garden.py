@@ -552,7 +552,12 @@ if __name__ == "__main__":
     jobs = [(m, v, None) for m in ("night", "day") for v in ("wide", "tall")]
     jobs += [(m, "sprite", s) for m in ("night", "day") for s in ("seed", "growing", "evergreen")]
     t = time.time()
-    with Pool(min(6, os.cpu_count() or 1)) as pool:
+    # painting is patient work: step aside for whatever else the machine is doing
+    try:
+        os.nice(10)
+    except OSError:
+        pass
+    with Pool(int(os.environ.get("DS_PAINT_JOBS", 0)) or min(6, max(2, (os.cpu_count() or 2) - 2))) as pool:
         meta = dict(r for r in pool.map(export, jobs) if r)
     with open(os.path.join(ROOT, "art", "garden.js"), "w") as f:
         f.write("/* written by _tools/paint/garden.py. the planter, where its stakes and threads are, and how to replay it */\n")
